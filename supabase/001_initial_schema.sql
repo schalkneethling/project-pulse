@@ -189,8 +189,6 @@ create trigger set_updated_at
   execute function public.handle_updated_at();
 
 -- ─── User settings (Netlify API token, etc.) ────────────────
--- NOTE: Sensitive tokens should ideally be stored in a private schema
--- if they are only needed by backend/edge functions.
 create table public.user_settings (
   user_id             uuid primary key references auth.users(id) on delete cascade,
   netlify_api_token   text,                     -- encrypted at rest by Supabase
@@ -200,8 +198,6 @@ create table public.user_settings (
 
 alter table public.user_settings enable row level security;
 
--- Only allow reading settings if absolutely necessary for the frontend.
--- If the API token is only for backend use, consider moving it to a private schema.
 create policy "Users can read own settings"
   on public.user_settings for select
   using (auth.uid() = user_id);
@@ -213,6 +209,12 @@ create policy "Users can upsert own settings"
 create policy "Users can update own settings"
   on public.user_settings for update
   using (auth.uid() = user_id);
+
+-- Prevent the frontend client from reading the API token back after it is saved.
+-- The authenticated role can write the token but not select it; server-side
+-- edge functions that run under the service_role key are not subject to this
+-- column-level restriction and can still read the token for API calls.
+revoke select (netlify_api_token) on public.user_settings from authenticated;
 
 create trigger set_settings_updated_at
   before update on public.user_settings
