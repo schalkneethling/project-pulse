@@ -16,13 +16,12 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^4.3.0",
-    "autoprefixer": "^10.4.20",
     "jsdom": "^29.0.1",
-    "postcss": "^8.4.49",
     "tailwindcss": "^4.2.2",
     "vite": "^6.0.0",
     "vitest": "^4.1.2"
