@@ -43,4 +43,41 @@ describe("LoginScreen", () => {
 
     expect(screen.getByText("Project Pulse")).toBeInTheDocument();
   });
+
+  describe("single-user mode", () => {
+    it("shows personal instance message instead of sign-in button", () => {
+      render(<LoginScreen onSignIn={vi.fn()} loading={false} mode="single" />);
+
+      expect(
+        screen.getByText("This is a personal Project Pulse instance.")
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /sign in with google/i })
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows 'Sign in as owner' link", () => {
+      render(<LoginScreen onSignIn={vi.fn()} loading={false} mode="single" />);
+
+      expect(
+        screen.getByRole("button", { name: /sign in as owner/i })
+      ).toBeInTheDocument();
+    });
+
+    it("reveals sign-in button after clicking 'Sign in as owner'", async () => {
+      const user = userEvent.setup();
+      render(<LoginScreen onSignIn={vi.fn()} loading={false} mode="single" />);
+
+      await user.click(
+        screen.getByRole("button", { name: /sign in as owner/i })
+      );
+
+      expect(
+        screen.getByRole("button", { name: /sign in with google/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("This is a personal Project Pulse instance.")
+      ).not.toBeInTheDocument();
+    });
+  });
 });

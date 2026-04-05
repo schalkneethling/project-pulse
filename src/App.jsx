@@ -469,7 +469,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginScreen onSignIn={signInWithGoogle} loading={authLoading} />;
+    return <LoginScreen onSignIn={signInWithGoogle} loading={authLoading} mode={import.meta.env.VITE_PULSE_MODE ?? "multi"} />;
   }
 
   if (projLoading) {
