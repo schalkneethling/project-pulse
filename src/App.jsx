@@ -367,6 +367,18 @@ function ProjList({ projects, onSelect }) {
   );
 }
 
+/* ─── editable field ────────────────────────────────────── */
+function Editable({ field, label, value, multi, editing, tempValue, onTempChange, onStartEdit, onCommit, onKeyDown, inputRef }) {
+  const Tag = multi ? "textarea" : "input";
+  return (
+    <div className="group">
+      <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">{label}</label>
+      {editing ? <Tag ref={inputRef} type="text" value={tempValue} onChange={(e) => onTempChange(e.target.value)} onKeyDown={(e) => onKeyDown(e, field)} onBlur={() => onCommit(field)} rows={multi ? 3 : undefined} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+        : <button onClick={() => onStartEdit(field, value)} className="w-full text-left px-3 py-2 rounded-lg border border-transparent hover:border-slate-600 hover:bg-slate-800/50 transition-colors min-h-[2.5rem] flex items-start"><span className={`text-sm ${value ? "text-slate-200" : "text-slate-500 italic"}`}>{value || `Set ${label.toLowerCase()}…`}</span><span className="ml-auto opacity-0 group-hover:opacity-100 text-slate-500 transition-opacity shrink-0 mt-0.5"><IconEdit size={14} /></span></button>}
+    </div>
+  );
+}
+
 /* ─── project detail ─────────────────────────────────────── */
 function Detail({ project, actions, onBack }) {
   const [editingField, setEditingField] = useState(null);
@@ -392,18 +404,6 @@ function Detail({ project, actions, onBack }) {
   const groups = { in_progress: project.tasks.filter((t) => t.status === "in_progress"), todo: project.tasks.filter((t) => t.status === "todo"), blocked: project.tasks.filter((t) => t.status === "blocked"), done: project.tasks.filter((t) => t.status === "done") };
   const gc = { in_progress: "border-blue-900/30", todo: "border-slate-700/50", blocked: "border-red-900/30", done: "border-slate-700/30" };
 
-  const Editable = ({ field, label, value, multi = false }) => {
-    const editing = editingField === field;
-    const Tag = multi ? "textarea" : "input";
-    return (
-      <div className="group">
-        <label className="block text-xs text-slate-400 uppercase tracking-wider mb-1">{label}</label>
-        {editing ? <Tag ref={ref} type="text" value={tempValue} onChange={(e) => setTempValue(e.target.value)} onKeyDown={(e) => onKey(e, field)} onBlur={() => commitEdit(field)} rows={multi ? 3 : undefined} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-          : <button onClick={() => startEdit(field, value)} className="w-full text-left px-3 py-2 rounded-lg border border-transparent hover:border-slate-600 hover:bg-slate-800/50 transition-colors min-h-[2.5rem] flex items-start"><span className={`text-sm ${value ? "text-slate-200" : "text-slate-500 italic"}`}>{value || `Set ${label.toLowerCase()}…`}</span><span className="ml-auto opacity-0 group-hover:opacity-100 text-slate-500 transition-opacity shrink-0 mt-0.5"><IconEdit size={14} /></span></button>}
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -421,9 +421,9 @@ function Detail({ project, actions, onBack }) {
             {Object.entries(STATUS).map(([k, v]) => <button key={k} onClick={() => actions.updateProject(project.id, { status: k })} role="radio" aria-checked={project.status === k} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${project.status === k ? `${v.color} text-white` : "bg-slate-700/50 text-slate-400 hover:bg-slate-700"}`}>{v.label}</button>)}
           </div>
         </div>
-        <Editable field="description" label="Description" value={project.description} multi />
+        <Editable field="description" label="Description" value={project.description} multi editing={editingField === "description"} tempValue={tempValue} onTempChange={setTempValue} onStartEdit={startEdit} onCommit={commitEdit} onKeyDown={onKey} inputRef={ref} />
         <div className="rounded-lg bg-slate-900/50 border border-blue-900/30 p-4">
-          <Editable field="nextStep" label="⚡ Next Step" value={project.nextStep} />
+          <Editable field="nextStep" label="⚡ Next Step" value={project.nextStep} editing={editingField === "nextStep"} tempValue={tempValue} onTempChange={setTempValue} onStartEdit={startEdit} onCommit={commitEdit} onKeyDown={onKey} inputRef={ref} />
           <p className="text-xs text-slate-500 mt-1 px-3">What should you do when you next sit down with this project?</p>
         </div>
         <div className="flex gap-4 text-xs text-slate-500 px-3"><span>Created {fmtDate(project.createdAt)}</span><span>Updated {fmtDate(project.updatedAt)}</span></div>
