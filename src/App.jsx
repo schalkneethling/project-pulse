@@ -3,6 +3,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
 import { useSettings } from "./hooks/useSettings";
 import { LoginScreen } from "./components/LoginScreen";
+import { daysSince, fmtDate, fmtDateTime, fmtDuration, timeAgo } from "./lib/helpers";
 
 /* ─── constants ──────────────────────────────────────────── */
 const STATUS = {
@@ -25,21 +26,6 @@ const DEPLOY_STATUS = {
   enqueued: { label: "Queued", color: "text-amber-400", bg: "bg-amber-950/30", border: "border-amber-900/40", dot: "bg-amber-500" },
   error: { label: "Failed", color: "text-red-400", bg: "bg-red-950/30", border: "border-red-900/40", dot: "bg-red-500" },
   none: { label: "No deploys", color: "text-slate-500", bg: "bg-slate-800/40", border: "border-slate-700/50", dot: "bg-slate-600" },
-};
-
-/* ─── helpers ────────────────────────────────────────────── */
-const daysSince = (d) => d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" }) : "";
-const fmtDateTime = (d) => d ? new Date(d).toLocaleDateString("en-ZA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
-const fmtDuration = (s) => { if (!s) return ""; if (s < 60) return `${s}s`; const m = Math.floor(s / 60); return (s % 60) > 0 ? `${m}m ${s % 60}s` : `${m}m`; };
-const timeAgo = (d) => {
-  if (!d) return "";
-  const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  const days = Math.floor(s / 86400);
-  return days === 1 ? "yesterday" : `${days}d ago`;
 };
 
 /* ─── icons ──────────────────────────────────────────────── */
