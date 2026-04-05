@@ -2,12 +2,14 @@
  * Pure helper / formatting functions used across the app.
  */
 
+const LOCALE = navigator?.languages?.[0] ?? "en-ZA";
+
 export const daysSince = (d) =>
   d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
 
 export const fmtDate = (d) =>
   d
-    ? new Date(d).toLocaleDateString("en-ZA", {
+    ? new Date(d).toLocaleDateString(LOCALE, {
         day: "numeric",
         month: "short",
         year: "numeric",
@@ -16,7 +18,7 @@ export const fmtDate = (d) =>
 
 export const fmtDateTime = (d) =>
   d
-    ? new Date(d).toLocaleDateString("en-ZA", {
+    ? new Date(d).toLocaleDateString(LOCALE, {
         day: "numeric",
         month: "short",
         hour: "2-digit",
