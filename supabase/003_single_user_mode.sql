@@ -1,0 +1,33 @@
+-- Single-user mode: restrict sign-in to a specific email address.
+--
+-- This is the server-side enforcement layer. Even if someone discovers
+-- the "Sign in as owner" link, Supabase will reject the sign-in unless
+-- their email matches.
+--
+-- HOW TO ENABLE:
+-- 1. Go to Supabase Dashboard > Authentication > Providers > Google
+-- 2. Under "Authorized Client IDs", ensure your Google OAuth client is configured
+-- 3. Go to Authentication > URL Configuration
+--    - Set "Redirect URLs" to your domain (e.g. https://pulse.schalkneethling.com/**)
+-- 4. To restrict to a single email, you have two options:
+--
+--    OPTION A — RLS policy (recommended):
+--    Add a policy that restricts data access to your email only.
+--    Users can still sign in, but they see no data and cannot create anything.
+--
+--    OPTION B — Pre-registration restriction:
+--    Go to Authentication > Settings and disable "Allow new users to sign up".
+--    Then manually invite your email via Authentication > Users > Invite.
+--    Any other Google sign-in will be rejected entirely.
+
+-- Option A: RLS policy to restrict all table access to your email.
+-- Replace 'you@gmail.com' with your actual email address before running.
+-- Uncomment the lines below to activate.
+
+-- ALTER POLICY "Users manage own projects" ON projects
+--   USING (auth.jwt() ->> 'email' = 'you@gmail.com');
+
+-- Alternatively, create a blanket deny for non-owner users:
+-- CREATE POLICY "single_user_only" ON projects
+--   FOR ALL
+--   USING (auth.jwt() ->> 'email' = 'you@gmail.com');
