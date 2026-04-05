@@ -22,6 +22,10 @@ export function useProjects(userId) {
         netlify_sites (
           *,
           netlify_deploys (*)
+        ),
+        github_repos (
+          *,
+          github_activity (*)
         )
       `)
       .eq("user_id", userId)
@@ -291,6 +295,83 @@ export function useProjects(userId) {
     []
   );
 
+  // ─── Save GitHub repo link ──────────────────────────────
+  const saveGithubRepo = useCallback(
+    async (projectId, { owner, repo }) => {
+      const payload = {
+        project_id: projectId,
+        user_id: userId,
+        owner: owner || "",
+        repo: repo || "",
+      };
+
+      const { data: existing } = await supabase
+        .from("github_repos")
+        .select("id")
+        .eq("project_id", projectId)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("github_repos")
+          .update(payload)
+          .eq("id", existing.id);
+      } else {
+        await supabase.from("github_repos").insert(payload);
+      }
+
+      await fetchProjects();
+    },
+    [userId, fetchProjects]
+  );
+
+  // ─── Remove GitHub repo link ────────────────────────────
+  const removeGithubRepo = useCallback(
+    async (projectId) => {
+      await supabase
+        .from("github_repos")
+        .delete()
+        .eq("project_id", projectId);
+
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === projectId ? { ...p, github: null } : p
+        )
+      );
+    },
+    []
+  );
+
+  // ─── Sync Netlify deploys via serverless function ───────
+  const syncNetlifyDeploys = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return { error: "Not authenticated" };
+
+    const res = await fetch("/.netlify/functions/sync-netlify-deploys", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+
+    const result = await res.json();
+    if (res.ok) await fetchProjects();
+    return result;
+  }, [fetchProjects]);
+
+  // ─── Sync GitHub activity via serverless function ───────
+  const syncGithubActivity = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return { error: "Not authenticated" };
+
+    const res = await fetch("/.netlify/functions/sync-github-activity", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+
+    const result = await res.json();
+    if (res.ok) await fetchProjects();
+    return result;
+  }, [fetchProjects]);
+
   return {
     projects,
     loading,
@@ -303,6 +384,10 @@ export function useProjects(userId) {
     deleteTask,
     saveNetlifySite,
     removeNetlifySite,
+    saveGithubRepo,
+    removeGithubRepo,
+    syncNetlifyDeploys,
+    syncGithubActivity,
     refetch: fetchProjects,
   };
 }
@@ -344,6 +429,32 @@ function normalizeProject(row) {
     };
   }
 
+  let github = null;
+  const ghRepo = Array.isArray(row.github_repos)
+    ? row.github_repos[0]
+    : row.github_repos;
+
+  if (ghRepo) {
+    const activity = Array.isArray(ghRepo.github_activity)
+      ? ghRepo.github_activity[0]
+      : ghRepo.github_activity;
+
+    github = {
+      owner: ghRepo.owner,
+      repo: ghRepo.repo,
+      activity: activity
+        ? {
+            openPrs: activity.open_prs,
+            reviewRequestedPrs: activity.review_requested_prs,
+            assignedIssues: activity.assigned_issues,
+            latestCommitAt: activity.latest_commit_at,
+            latestCommitMessage: activity.latest_commit_message,
+            syncedAt: activity.synced_at,
+          }
+        : null,
+    };
+  }
+
   return {
     id: row.id,
     name: row.name,
@@ -355,5 +466,6 @@ function normalizeProject(row) {
     updatedAt: row.updated_at,
     tasks,
     netlify,
+    github,
   };
 }
