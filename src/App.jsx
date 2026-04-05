@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
+import { useSettings } from "./hooks/useSettings";
 import { LoginScreen } from "./components/LoginScreen";
 
 /* ─── constants ──────────────────────────────────────────── */
@@ -58,6 +59,11 @@ function IconExternal({ size = 14 }) { return <Ico size={size}><path d="M18 13v6
 function IconBranch({ size = 14 }) { return <Ico size={size}><line x1="6" y1="3" x2="6" y2="15" /><circle cx="18" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M18 9a9 9 0 0 1-9 9" /></Ico>; }
 function IconCommit({ size = 14 }) { return <Ico size={size}><circle cx="12" cy="12" r="4" /><line x1="1.05" y1="12" x2="7" y2="12" /><line x1="17.01" y1="12" x2="22.96" y2="12" /></Ico>; }
 function IconLogout({ size = 18 }) { return <Ico size={size}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></Ico>; }
+function IconSettings({ size = 18 }) { return <Ico size={size}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></Ico>; }
+function IconRefresh({ size = 16 }) { return <Ico size={size}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></Ico>; }
+function IconGithub({ size = 16 }) { return <Ico size={size}><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" /></Ico>; }
+function IconPR({ size = 14 }) { return <Ico size={size}><circle cx="18" cy="18" r="3" /><circle cx="6" cy="6" r="3" /><path d="M13 6h3a2 2 0 0 1 2 2v7" /><line x1="6" y1="9" x2="6" y2="21" /></Ico>; }
+function IconIssue({ size = 14 }) { return <Ico size={size}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Ico>; }
 
 /* ─── small UI pieces ────────────────────────────────────── */
 function StatusBadge({ status }) {
@@ -79,7 +85,7 @@ function DeployBadge({ netlify }) {
 }
 
 /* ─── deploy card ────────────────────────────────────────── */
-function DeployCard({ netlify, onEdit, onRemove }) {
+function DeployCard({ netlify, onEdit, onRemove, onSync, syncing }) {
   if (!netlify) {
     return <button onClick={onEdit} className="w-full rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-500 hover:border-slate-600 hover:text-slate-400 transition-colors flex items-center justify-center gap-2"><IconRocket size={18} />Link Netlify site</button>;
   }
@@ -91,6 +97,7 @@ function DeployCard({ netlify, onEdit, onRemove }) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2"><IconRocket size={18} /><h3 className="text-sm font-semibold text-slate-200">Netlify Deploy</h3></div>
         <div className="flex items-center gap-2">
+          <button onClick={onSync} disabled={syncing} className={`text-slate-500 hover:text-slate-300 transition-colors ${syncing ? "animate-spin" : ""}`} aria-label="Sync Netlify deploys"><IconRefresh size={14} /></button>
           <button onClick={onEdit} className="text-slate-500 hover:text-slate-300 transition-colors" aria-label="Edit Netlify settings"><IconEdit size={14} /></button>
           <button onClick={onRemove} className="text-slate-500 hover:text-red-400 transition-colors" aria-label="Remove Netlify link"><IconTrash size={14} /></button>
         </div>
@@ -142,7 +149,7 @@ function NetlifyModal({ netlify, onSave, onClose }) {
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Link Netlify site">
         <h2 className="text-lg font-semibold text-slate-200">Link Netlify Site</h2>
-        <p className="text-xs text-slate-400">Manual entry for now. API auto-sync coming in a future update.</p>
+        <p className="text-xs text-slate-400">Link a Netlify site to track deploy status. Add your API token in Settings to enable auto-sync.</p>
         <div><label className={lc}>Site name</label><input type="text" value={form.siteName} onChange={(e) => setForm({ ...form, siteName: e.target.value })} placeholder="my-awesome-site" className={ic} /></div>
         <div><label className={lc}>Site URL</label><input type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://my-awesome-site.netlify.app" className={ic} /></div>
         <div><label className={lc}>Netlify Site ID (for future API sync)</label><input type="text" value={form.siteId} onChange={(e) => setForm({ ...form, siteId: e.target.value })} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" className={ic} /></div>
@@ -165,6 +172,134 @@ function NetlifyModal({ netlify, onSave, onClose }) {
   );
 }
 
+/* ─── settings modal ────────────────────────────────────── */
+function SettingsModal({ onClose, saveTokens }) {
+  const [netlifyToken, setNetlifyToken] = useState("");
+  const [githubToken, setGithubToken] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const ic = "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const lc = "block text-xs text-slate-400 uppercase tracking-wider mb-1";
+
+  const handleSave = async () => {
+    setSaving(true);
+    const updates = {};
+    if (netlifyToken) updates.netlifyToken = netlifyToken;
+    if (githubToken) updates.githubToken = githubToken;
+    await saveTokens(updates);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Settings">
+        <h2 className="text-lg font-semibold text-slate-200">Settings</h2>
+        <p className="text-xs text-slate-400">API tokens are stored securely and cannot be read back after saving. Enter a new value to update.</p>
+        <div>
+          <label className={lc}>Netlify Personal Access Token</label>
+          <input type="password" value={netlifyToken} onChange={(e) => setNetlifyToken(e.target.value)} placeholder="Enter token to save or update" className={ic} />
+          <p className="text-xs text-slate-500 mt-1">Used to auto-sync deploy status from Netlify.</p>
+        </div>
+        <div>
+          <label className={lc}>GitHub Personal Access Token</label>
+          <input type="password" value={githubToken} onChange={(e) => setGithubToken(e.target.value)} placeholder="Enter token to save or update" className={ic} />
+          <p className="text-xs text-slate-500 mt-1">Used to sync PRs, issues, and commit activity from GitHub.</p>
+        </div>
+        <div className="flex gap-2 pt-2">
+          <button onClick={handleSave} disabled={saving || (!netlifyToken && !githubToken)} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors">
+            {saving ? "Saving…" : saved ? "Saved" : "Save"}
+          </button>
+          <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── github repo modal ─────────────────────────────────── */
+function GitHubModal({ github, onSave, onClose }) {
+  const [owner, setOwner] = useState(github?.owner || "");
+  const [repo, setRepo] = useState(github?.repo || "");
+  const ic = "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const lc = "block text-xs text-slate-400 uppercase tracking-wider mb-1";
+
+  const handleSave = () => {
+    if (!owner.trim() || !repo.trim()) return;
+    onSave({ owner: owner.trim(), repo: repo.trim() });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Link GitHub repository">
+        <h2 className="text-lg font-semibold text-slate-200">Link GitHub Repo</h2>
+        <div><label className={lc}>Owner / Organization</label><input type="text" value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="e.g. schalkneethling" className={ic} /></div>
+        <div><label className={lc}>Repository</label><input type="text" value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="e.g. project-pulse" className={ic} /></div>
+        <div className="flex gap-2 pt-2">
+          <button onClick={handleSave} disabled={!owner.trim() || !repo.trim()} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors">Save</button>
+          <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── github activity card ──────────────────────────────── */
+function GitHubCard({ github, onEdit, onRemove, onSync, syncing }) {
+  if (!github) {
+    return <button onClick={onEdit} className="w-full rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-500 hover:border-slate-600 hover:text-slate-400 transition-colors flex items-center justify-center gap-2"><IconGithub size={18} />Link GitHub repo</button>;
+  }
+
+  const a = github.activity;
+
+  return (
+    <div className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2"><IconGithub size={18} /><h3 className="text-sm font-semibold text-slate-200">GitHub</h3></div>
+        <div className="flex items-center gap-2">
+          <button onClick={onSync} disabled={syncing} className={`text-slate-500 hover:text-slate-300 transition-colors ${syncing ? "animate-spin" : ""}`} aria-label="Sync GitHub activity"><IconRefresh size={14} /></button>
+          <button onClick={onEdit} className="text-slate-500 hover:text-slate-300 transition-colors" aria-label="Edit GitHub settings"><IconEdit size={14} /></button>
+          <button onClick={onRemove} className="text-slate-500 hover:text-red-400 transition-colors" aria-label="Remove GitHub link"><IconTrash size={14} /></button>
+        </div>
+      </div>
+      <div className="mt-3 space-y-2">
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="truncate">{github.owner}/{github.repo}</span>
+          <a href={`https://github.com/${github.owner}/${github.repo}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 shrink-0"><IconExternal size={12} /></a>
+        </div>
+        {a ? (
+          <>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="rounded-lg bg-slate-900/50 border border-slate-700/50 p-2 text-center">
+                <p className="text-lg font-bold text-blue-400">{a.openPrs}</p>
+                <p className="text-xs text-slate-500">Open PRs</p>
+              </div>
+              <div className="rounded-lg bg-slate-900/50 border border-slate-700/50 p-2 text-center">
+                <p className={`text-lg font-bold ${a.reviewRequestedPrs > 0 ? "text-amber-400" : "text-slate-400"}`}>{a.reviewRequestedPrs}</p>
+                <p className="text-xs text-slate-500">Review</p>
+              </div>
+              <div className="rounded-lg bg-slate-900/50 border border-slate-700/50 p-2 text-center">
+                <p className={`text-lg font-bold ${a.assignedIssues > 0 ? "text-red-400" : "text-slate-400"}`}>{a.assignedIssues}</p>
+                <p className="text-xs text-slate-500">Issues</p>
+              </div>
+            </div>
+            {a.latestCommitMessage && (
+              <div className="flex items-start gap-2 text-xs text-slate-500 pt-1">
+                <span className="shrink-0 mt-0.5"><IconCommit size={12} /></span>
+                <span className="line-clamp-2">{a.latestCommitMessage}</span>
+              </div>
+            )}
+            {a.syncedAt && <p className="text-xs text-slate-600">Synced {timeAgo(a.syncedAt)}</p>}
+          </>
+        ) : (
+          <p className="text-xs text-slate-500">No activity data yet. Click refresh to sync.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── overview ───────────────────────────────────────────── */
 function Overview({ projects, onSelect }) {
   const active = projects.filter((p) => p.status === "active");
@@ -174,17 +309,25 @@ function Overview({ projects, onSelect }) {
   const inProgress = projects.flatMap((p) => p.tasks.filter((t) => t.status === "in_progress").map((t) => ({ ...t, pName: p.name, pId: p.id })));
   const nextSteps = projects.filter((p) => p.nextStep && (p.status === "active" || p.status === "blocked"));
   const deployAlerts = projects.filter((p) => { const s = p.netlify?.lastDeploy?.state; return s === "error" || s === "building"; });
+  const reviewPRs = projects.filter((p) => p.github?.activity?.reviewRequestedPrs > 0);
+  const assignedIssues = projects.filter((p) => p.github?.activity?.assignedIssues > 0);
+  const ghStale = projects.filter((p) => {
+    if (!p.github?.activity?.latestCommitAt || p.status !== "active") return false;
+    return daysSince(p.github.activity.latestCommitAt) >= 7;
+  });
 
   return (
     <div className="space-y-8">
       <header><h1 className="text-3xl font-bold tracking-tight text-slate-100">Project Pulse</h1><p className="mt-1 text-slate-400">What needs your attention right now</p></header>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[{ l: "Active", v: active.length, c: "text-emerald-400" }, { l: "Blocked", v: blocked.length, c: "text-red-400" }, { l: "In Progress", v: inProgress.length, c: "text-blue-400" }, { l: "Stale (7d+)", v: stale.length, c: "text-amber-400" }].map((x) => (
+        {[{ l: "Active", v: active.length, c: "text-emerald-400" }, { l: "Blocked", v: blocked.length, c: "text-red-400" }, { l: "In Progress", v: inProgress.length, c: "text-blue-400" }, { l: "Stale (7d+)", v: stale.length + ghStale.filter((p) => !stale.includes(p)).length, c: "text-amber-400" }].map((x) => (
           <div key={x.l} className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-4"><p className="text-xs text-slate-400 uppercase tracking-wider">{x.l}</p><p className={`mt-1 text-2xl font-bold ${x.c}`}>{x.v}</p></div>
         ))}
       </div>
 
       {deployAlerts.length > 0 && <section><h2 className="flex items-center gap-2 text-lg font-semibold text-slate-200 mb-3"><IconRocket size={20} />Deploy Alerts</h2><div className="space-y-2">{deployAlerts.map((p) => { const ds = DEPLOY_STATUS[p.netlify.lastDeploy.state]; return <button key={p.id} onClick={() => onSelect(p.id)} className={`w-full text-left rounded-lg ${ds.bg} border ${ds.border} p-3 hover:brightness-125 transition-all`}><div className="flex items-center justify-between"><span className="font-medium text-slate-200">{p.name}</span><DeployBadge netlify={p.netlify} /></div>{p.netlify.lastDeploy.errorMessage && <p className="mt-1 text-xs text-red-400 truncate">{p.netlify.lastDeploy.errorMessage}</p>}</button>; })}</div></section>}
+
+      {(reviewPRs.length > 0 || assignedIssues.length > 0) && <section><h2 className="flex items-center gap-2 text-lg font-semibold text-slate-200 mb-3"><IconGithub size={20} />GitHub Activity</h2><div className="space-y-2">{reviewPRs.map((p) => <button key={`pr-${p.id}`} onClick={() => onSelect(p.id)} className="w-full text-left rounded-lg bg-amber-950/20 border border-amber-900/30 p-3 hover:bg-amber-950/40 transition-colors"><div className="flex items-center justify-between"><span className="font-medium text-slate-200">{p.name}</span><span className="text-xs text-amber-400 flex items-center gap-1"><IconPR size={12} />{p.github.activity.reviewRequestedPrs} PR{p.github.activity.reviewRequestedPrs !== 1 ? "s" : ""} awaiting review</span></div></button>)}{assignedIssues.map((p) => <button key={`iss-${p.id}`} onClick={() => onSelect(p.id)} className="w-full text-left rounded-lg bg-purple-950/20 border border-purple-900/30 p-3 hover:bg-purple-950/40 transition-colors"><div className="flex items-center justify-between"><span className="font-medium text-slate-200">{p.name}</span><span className="text-xs text-purple-400 flex items-center gap-1"><IconIssue size={12} />{p.github.activity.assignedIssues} assigned issue{p.github.activity.assignedIssues !== 1 ? "s" : ""}</span></div></button>)}</div></section>}
 
       {(blocked.length > 0 || blockedTasks.length > 0) && <section><h2 className="flex items-center gap-2 text-lg font-semibold text-red-400 mb-3"><IconAlert size={20} />Blocked on You</h2><div className="space-y-2">{blocked.map((p) => <button key={p.id} onClick={() => onSelect(p.id)} className="w-full text-left rounded-lg bg-red-950/30 border border-red-900/40 p-3 hover:bg-red-950/50 transition-colors"><span className="font-medium text-slate-200">{p.name}</span>{p.nextStep && <p className="mt-1 text-sm text-slate-400">Next: {p.nextStep}</p>}</button>)}{blockedTasks.map((t) => <button key={t.id} onClick={() => onSelect(t.pId)} className="w-full text-left rounded-lg bg-red-950/20 border border-red-900/30 p-3 hover:bg-red-950/40 transition-colors"><span className="text-sm text-slate-400">{t.pName}</span><p className="font-medium text-slate-200">{t.title}</p></button>)}</div></section>}
 
@@ -231,6 +374,9 @@ function Detail({ project, actions, onBack }) {
   const [newTask, setNewTask] = useState("");
   const [showDelete, setShowDelete] = useState(false);
   const [showNetlify, setShowNetlify] = useState(false);
+  const [showGithub, setShowGithub] = useState(false);
+  const [syncingNetlify, setSyncingNetlify] = useState(false);
+  const [syncingGithub, setSyncingGithub] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => { if (editingField && ref.current) ref.current.focus(); }, [editingField]);
@@ -240,6 +386,8 @@ function Detail({ project, actions, onBack }) {
   const onKey = (e, f) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitEdit(f); } if (e.key === "Escape") setEditingField(null); };
 
   const handleAddTask = () => { if (!newTask.trim()) return; actions.addTask(project.id, newTask.trim()); setNewTask(""); };
+  const handleSyncNetlify = async () => { setSyncingNetlify(true); await actions.syncNetlifyDeploys(); setSyncingNetlify(false); };
+  const handleSyncGithub = async () => { setSyncingGithub(true); await actions.syncGithubActivity(); setSyncingGithub(false); };
 
   const groups = { in_progress: project.tasks.filter((t) => t.status === "in_progress"), todo: project.tasks.filter((t) => t.status === "todo"), blocked: project.tasks.filter((t) => t.status === "blocked"), done: project.tasks.filter((t) => t.status === "done") };
   const gc = { in_progress: "border-blue-900/30", todo: "border-slate-700/50", blocked: "border-red-900/30", done: "border-slate-700/30" };
@@ -281,7 +429,9 @@ function Detail({ project, actions, onBack }) {
         <div className="flex gap-4 text-xs text-slate-500 px-3"><span>Created {fmtDate(project.createdAt)}</span><span>Updated {fmtDate(project.updatedAt)}</span></div>
       </div>
 
-      <DeployCard netlify={project.netlify} onEdit={() => setShowNetlify(true)} onRemove={() => actions.removeNetlifySite(project.id)} />
+      <DeployCard netlify={project.netlify} onEdit={() => setShowNetlify(true)} onRemove={() => actions.removeNetlifySite(project.id)} onSync={handleSyncNetlify} syncing={syncingNetlify} />
+
+      <GitHubCard github={project.github} onEdit={() => setShowGithub(true)} onRemove={() => actions.removeGithubRepo(project.id)} onSync={handleSyncGithub} syncing={syncingGithub} />
 
       <section>
         <h3 className="text-lg font-semibold text-slate-200 mb-4">Tasks</h3>
@@ -302,6 +452,7 @@ function Detail({ project, actions, onBack }) {
       </div>
 
       {showNetlify && <NetlifyModal netlify={project.netlify} onSave={(data) => { actions.saveNetlifySite(project.id, data); setShowNetlify(false); }} onClose={() => setShowNetlify(false)} />}
+      {showGithub && <GitHubModal github={project.github} onSave={(data) => { actions.saveGithubRepo(project.id, data); setShowGithub(false); }} onClose={() => setShowGithub(false)} />}
     </div>
   );
 }
@@ -314,10 +465,14 @@ export default function App() {
     createProject, updateProject, deleteProject,
     addTask, updateTask, deleteTask,
     saveNetlifySite, removeNetlifySite,
+    saveGithubRepo, removeGithubRepo,
+    syncNetlifyDeploys, syncGithubActivity,
   } = useProjects(user?.id);
+  const { saveTokens } = useSettings(user?.id);
 
   const [view, setView] = useState("overview");
   const [selectedId, setSelectedId] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const select = (id) => { setSelectedId(id); setView("detail"); };
   const selected = projects.find((p) => p.id === selectedId);
@@ -335,7 +490,7 @@ export default function App() {
     return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><div className="animate-pulse text-slate-400">Loading projects…</div></div>;
   }
 
-  const actions = { updateProject, deleteProject, addTask, updateTask, deleteTask, saveNetlifySite, removeNetlifySite };
+  const actions = { updateProject, deleteProject, addTask, updateTask, deleteTask, saveNetlifySite, removeNetlifySite, saveGithubRepo, removeGithubRepo, syncNetlifyDeploys, syncGithubActivity };
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200">
@@ -347,7 +502,8 @@ export default function App() {
               {["overview", "projects"].map((v) => <button key={v} onClick={() => setView(v)} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${view === v ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"}`}>{v === "overview" ? "Overview" : `Projects (${projects.length})`}</button>)}
               <button onClick={handleNew} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium text-white transition-colors flex items-center gap-1.5" aria-label="Add new project"><IconPlus size={16} /><span className="hidden sm:inline">New</span></button>
             </nav>
-            <button onClick={signOut} className="ml-3 p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors" aria-label="Sign out" title="Sign out"><IconLogout size={18} /></button>
+            <button onClick={() => setShowSettings(true)} className="ml-3 p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors" aria-label="Settings" title="Settings"><IconSettings size={18} /></button>
+            <button onClick={signOut} className="ml-1 p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors" aria-label="Sign out" title="Sign out"><IconLogout size={18} /></button>
           </div>
         )}
 
@@ -363,6 +519,7 @@ export default function App() {
 
         {view === "detail" && selected && <Detail project={selected} actions={actions} onBack={() => setView("overview")} />}
       </div>
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} saveTokens={saveTokens} />}
     </div>
   );
 }
