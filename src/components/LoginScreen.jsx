@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function LoginScreen({ onSignIn, loading, mode = "multi" }) {
+export function LoginScreen({ onSignIn, loading, mode = "single" }) {
   const isSingleUser = mode === "single";
   const [showSignIn, setShowSignIn] = useState(!isSingleUser);
 
@@ -56,7 +56,15 @@ export function LoginScreen({ onSignIn, loading, mode = "multi" }) {
         ) : (
           <>
             <p className="text-slate-400">
-              This is a personal Project Pulse instance.
+              This is a personal Project Pulse instance. Want your own?{" "}
+              <a
+                href="https://github.com/schalkneethling/project-pulse"
+                className="text-slate-300 underline underline-offset-2 hover:text-white transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Fork it on GitHub
+              </a>
             </p>
             <button
               onClick={() => setShowSignIn(true)}

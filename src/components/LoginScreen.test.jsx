@@ -4,44 +4,46 @@ import userEvent from "@testing-library/user-event";
 import { LoginScreen } from "./LoginScreen";
 
 describe("LoginScreen", () => {
-  it("renders the sign-in button", () => {
-    render(<LoginScreen onSignIn={vi.fn()} loading={false} />);
+  describe("multi-user mode", () => {
+    it("renders the sign-in button", () => {
+      render(<LoginScreen onSignIn={vi.fn()} loading={false} mode="multi" />);
 
-    expect(
-      screen.getByRole("button", { name: /sign in with google/i })
-    ).toBeInTheDocument();
-  });
+      expect(
+        screen.getByRole("button", { name: /sign in with google/i })
+      ).toBeInTheDocument();
+    });
 
-  it("shows 'Signing in…' when loading", () => {
-    render(<LoginScreen onSignIn={vi.fn()} loading={true} />);
+    it("shows 'Signing in…' when loading", () => {
+      render(<LoginScreen onSignIn={vi.fn()} loading={true} mode="multi" />);
 
-    expect(screen.getByText(/signing in/i)).toBeInTheDocument();
-  });
+      expect(screen.getByText(/signing in/i)).toBeInTheDocument();
+    });
 
-  it("disables the button when loading", () => {
-    render(<LoginScreen onSignIn={vi.fn()} loading={true} />);
+    it("disables the button when loading", () => {
+      render(<LoginScreen onSignIn={vi.fn()} loading={true} mode="multi" />);
 
-    expect(
-      screen.getByRole("button", { name: /signing in/i })
-    ).toBeDisabled();
-  });
+      expect(
+        screen.getByRole("button", { name: /signing in/i })
+      ).toBeDisabled();
+    });
 
-  it("calls onSignIn when clicked", async () => {
-    const onSignIn = vi.fn();
-    const user = userEvent.setup();
-    render(<LoginScreen onSignIn={onSignIn} loading={false} />);
+    it("calls onSignIn when clicked", async () => {
+      const onSignIn = vi.fn();
+      const user = userEvent.setup();
+      render(<LoginScreen onSignIn={onSignIn} loading={false} mode="multi" />);
 
-    await user.click(
-      screen.getByRole("button", { name: /sign in with google/i })
-    );
+      await user.click(
+        screen.getByRole("button", { name: /sign in with google/i })
+      );
 
-    expect(onSignIn).toHaveBeenCalledOnce();
-  });
+      expect(onSignIn).toHaveBeenCalledOnce();
+    });
 
-  it("displays the app title", () => {
-    render(<LoginScreen onSignIn={vi.fn()} loading={false} />);
+    it("displays the app title", () => {
+      render(<LoginScreen onSignIn={vi.fn()} loading={false} mode="multi" />);
 
-    expect(screen.getByText("Project Pulse")).toBeInTheDocument();
+      expect(screen.getByText("Project Pulse")).toBeInTheDocument();
+    });
   });
 
   describe("single-user mode", () => {
@@ -49,19 +51,30 @@ describe("LoginScreen", () => {
       render(<LoginScreen onSignIn={vi.fn()} loading={false} mode="single" />);
 
       expect(
-        screen.getByText("This is a personal Project Pulse instance.")
+        screen.getByText(/personal project pulse instance/i)
       ).toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: /sign in with google/i })
       ).not.toBeInTheDocument();
     });
 
-    it("shows 'Sign in as owner' link", () => {
+    it("shows 'Sign in as owner' button", () => {
       render(<LoginScreen onSignIn={vi.fn()} loading={false} mode="single" />);
 
       expect(
         screen.getByRole("button", { name: /sign in as owner/i })
       ).toBeInTheDocument();
+    });
+
+    it("includes a link to fork the project", () => {
+      render(<LoginScreen onSignIn={vi.fn()} loading={false} mode="single" />);
+
+      expect(
+        screen.getByRole("link", { name: /fork it on github/i })
+      ).toHaveAttribute(
+        "href",
+        "https://github.com/schalkneethling/project-pulse"
+      );
     });
 
     it("reveals sign-in button after clicking 'Sign in as owner'", async () => {
@@ -76,8 +89,16 @@ describe("LoginScreen", () => {
         screen.getByRole("button", { name: /sign in with google/i })
       ).toBeInTheDocument();
       expect(
-        screen.queryByText("This is a personal Project Pulse instance.")
+        screen.queryByText(/personal project pulse instance/i)
       ).not.toBeInTheDocument();
+    });
+
+    it("defaults to single-user mode when no mode is provided", () => {
+      render(<LoginScreen onSignIn={vi.fn()} loading={false} />);
+
+      expect(
+        screen.getByText(/personal project pulse instance/i)
+      ).toBeInTheDocument();
     });
   });
 });

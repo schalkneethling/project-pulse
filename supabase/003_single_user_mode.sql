@@ -9,25 +9,28 @@
 -- 2. Under "Authorized Client IDs", ensure your Google OAuth client is configured
 -- 3. Go to Authentication > URL Configuration
 --    - Set "Redirect URLs" to your domain (e.g. https://pulse.schalkneethling.com/**)
--- 4. To restrict to a single email, you have two options:
+-- 4. To restrict to a single email, pick ONE of the two options below:
 --
 --    OPTION A — RLS policy (recommended):
---    Add a policy that restricts data access to your email only.
---    Users can still sign in, but they see no data and cannot create anything.
+--    Tighten existing RLS policies so only your email can read/write data.
+--    Other users can still technically sign in via Google, but they see
+--    no data and cannot create anything — effectively a no-op.
+--    Use one of the two SQL examples below (both implement Option A).
 --
 --    OPTION B — Pre-registration restriction:
 --    Go to Authentication > Settings and disable "Allow new users to sign up".
 --    Then manually invite your email via Authentication > Users > Invite.
---    Any other Google sign-in will be rejected entirely.
+--    Any other Google sign-in will be rejected entirely at the auth level.
 
--- Option A: RLS policy to restrict all table access to your email.
+-- ─── OPTION A examples ────────────────────────────────────────────────
 -- Replace 'you@gmail.com' with your actual email address before running.
 -- Uncomment the lines below to activate.
 
+-- Example 1: Tighten the existing policy on the projects table.
 -- ALTER POLICY "Users manage own projects" ON projects
 --   USING (auth.jwt() ->> 'email' = 'you@gmail.com');
 
--- Alternatively, create a blanket deny for non-owner users:
+-- Example 2: Create a blanket deny for non-owner users.
 -- CREATE POLICY "single_user_only" ON projects
 --   FOR ALL
 --   USING (auth.jwt() ->> 'email' = 'you@gmail.com');
