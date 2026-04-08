@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
 import { useSettings } from "./hooks/useSettings";
+import { useBreadcrumbs } from "./hooks/useBreadcrumbs";
 import { LoginScreen } from "./components/LoginScreen";
+import { BreadcrumbForm, BreadcrumbList, BreadcrumbCard } from "./components/Breadcrumbs";
 import { daysSince, fmtDate, fmtDateTime, fmtDuration, timeAgo } from "./lib/helpers";
 
 /* ─── constants ──────────────────────────────────────────── */
@@ -366,7 +368,7 @@ function Editable({ field, label, value, multi, editing, tempValue, onTempChange
 }
 
 /* ─── project detail ─────────────────────────────────────── */
-function Detail({ project, actions, onBack }) {
+function Detail({ project, actions, breadcrumbs, onUpdateBreadcrumb, onDeleteBreadcrumb, onBack }) {
   const [editingField, setEditingField] = useState(null);
   const [tempValue, setTempValue] = useState("");
   const [newTask, setNewTask] = useState("");
@@ -432,6 +434,17 @@ function Detail({ project, actions, onBack }) {
         {project.tasks.length === 0 && <p className="text-sm text-slate-500 text-center py-6">No tasks yet — add one above</p>}
       </section>
 
+      {breadcrumbs?.length > 0 && (
+        <section>
+          <h3 className="text-lg font-semibold text-slate-200 mb-4">Breadcrumbs</h3>
+          <div className="space-y-3">
+            {breadcrumbs.map((b) => (
+              <BreadcrumbCard key={b.id} breadcrumb={b} onUpdate={onUpdateBreadcrumb} onDelete={onDeleteBreadcrumb} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="border-t border-slate-800 pt-6">
         {showDelete ? <div className="flex items-center gap-3 bg-red-950/30 border border-red-900/40 rounded-lg p-4"><p className="text-sm text-red-300 flex-1">Permanently delete "{project.name || "this project"}"?</p><button onClick={() => { actions.deleteProject(project.id); onBack(); }} className="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-medium text-white transition-colors">Delete</button><button onClick={() => setShowDelete(false)} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors">Cancel</button></div>
           : <button onClick={() => setShowDelete(true)} className="text-sm text-slate-500 hover:text-red-400 transition-colors">Delete project</button>}
@@ -455,6 +468,9 @@ export default function App() {
     syncNetlifyDeploys, syncGithubActivity,
   } = useProjects(user?.id);
   const { saveTokens } = useSettings(user?.id);
+  const {
+    breadcrumbs, createBreadcrumb, updateBreadcrumb, deleteBreadcrumb,
+  } = useBreadcrumbs(user?.id);
 
   const [view, setView] = useState("overview");
   const [selectedId, setSelectedId] = useState(null);
@@ -485,7 +501,7 @@ export default function App() {
         {view !== "detail" && (
           <div className="flex items-center justify-between mb-6">
             <nav className="flex items-center gap-1 flex-1 bg-slate-800/60 rounded-xl p-1 border border-slate-700/50">
-              {["overview", "projects"].map((v) => <button key={v} onClick={() => setView(v)} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${view === v ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"}`}>{v === "overview" ? "Overview" : `Projects (${projects.length})`}</button>)}
+              {[["overview", "Overview"], ["projects", `Projects (${projects.length})`], ["breadcrumbs", "Breadcrumbs"]].map(([v, label]) => <button key={v} onClick={() => setView(v)} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${view === v ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"}`}>{label}</button>)}
               <button onClick={handleNew} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium text-white transition-colors flex items-center gap-1.5" aria-label="Add new project"><IconPlus size={16} /><span className="hidden sm:inline">New</span></button>
             </nav>
             <button onClick={() => setShowSettings(true)} className="ml-3 p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors" aria-label="Settings" title="Settings"><IconSettings size={18} /></button>
@@ -503,7 +519,15 @@ export default function App() {
           </div>
         )}
 
-        {view === "detail" && selected && <Detail project={selected} actions={actions} onBack={() => setView("overview")} />}
+        {view === "breadcrumbs" && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-bold text-slate-100">Breadcrumbs</h1>
+            <BreadcrumbForm onCreate={createBreadcrumb} projects={projects} />
+            <BreadcrumbList breadcrumbs={breadcrumbs} onUpdate={updateBreadcrumb} onDelete={deleteBreadcrumb} projects={projects} />
+          </div>
+        )}
+
+        {view === "detail" && selected && <Detail project={selected} actions={actions} breadcrumbs={breadcrumbs.filter((b) => b.projectId === selected.id)} onUpdateBreadcrumb={updateBreadcrumb} onDeleteBreadcrumb={deleteBreadcrumb} onBack={() => setView("overview")} />}
       </div>
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} saveTokens={saveTokens} />}
     </div>
