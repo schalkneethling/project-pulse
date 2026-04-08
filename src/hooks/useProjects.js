@@ -11,7 +11,7 @@ export function useProjects(userId) {
   const [error, setError] = useState(null);
 
   // ─── Fetch all projects with relations ───────────────────
-  const fetchProjects = useCallback(async () => {
+  const fetchProjects = useCallback(async (signal) => {
     if (!userId) return;
 
     const { data, error: fetchError } = await supabase
@@ -30,7 +30,10 @@ export function useProjects(userId) {
       `)
       .eq("user_id", userId)
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .abortSignal(signal);
+
+    if (signal?.aborted) return;
 
     if (fetchError) {
       setError(fetchError.message);
@@ -45,7 +48,9 @@ export function useProjects(userId) {
   }, [userId]);
 
   useEffect(() => {
-    fetchProjects();
+    const controller = new AbortController();
+    fetchProjects(controller.signal);
+    return () => controller.abort();
   }, [fetchProjects]);
 
   // ─── Create project ──────────────────────────────────────
