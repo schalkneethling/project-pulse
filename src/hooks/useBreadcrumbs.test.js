@@ -18,6 +18,7 @@ function mockChain(resolvedValue = { data: [], error: null }) {
     ilike: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
+    abortSignal: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue(resolvedValue),
     then: (resolve) => resolve(resolvedValue),
   };

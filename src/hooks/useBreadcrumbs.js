@@ -6,14 +6,17 @@ export function useBreadcrumbs(userId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchBreadcrumbs = useCallback(async () => {
+  const fetchBreadcrumbs = useCallback(async (signal) => {
     if (!userId) return;
 
     const { data, error: fetchError } = await supabase
       .from("breadcrumbs")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .abortSignal(signal);
+
+    if (signal?.aborted) return;
 
     if (fetchError) {
       setError(fetchError.message);
@@ -26,7 +29,9 @@ export function useBreadcrumbs(userId) {
   }, [userId]);
 
   useEffect(() => {
-    fetchBreadcrumbs();
+    const controller = new AbortController();
+    fetchBreadcrumbs(controller.signal);
+    return () => controller.abort();
   }, [fetchBreadcrumbs]);
 
   const createBreadcrumb = useCallback(
