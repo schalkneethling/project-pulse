@@ -501,7 +501,24 @@ export default function App() {
         {view !== "detail" && (
           <div className="flex items-center justify-between mb-6">
             <nav className="flex items-center gap-1 flex-1 bg-slate-800/60 rounded-xl p-1 border border-slate-700/50">
-              {[["overview", "Overview"], ["projects", `Projects (${projects.length})`], ["breadcrumbs", "Breadcrumbs"]].map(([v, label]) => <button key={v} onClick={() => setView(v)} className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${view === v ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"}`}>{label}</button>)}
+              {[
+                ["overview", "Overview"],
+                ["projects", `Projects (${projects.length})`],
+                ["breadcrumbs", "Breadcrumbs"],
+              ].map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    view === v
+                      ? "bg-slate-700 text-white"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
               <button onClick={handleNew} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium text-white transition-colors flex items-center gap-1.5" aria-label="Add new project"><IconPlus size={16} /><span className="hidden sm:inline">New</span></button>
             </nav>
             <button onClick={() => setShowSettings(true)} className="ml-3 p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors" aria-label="Settings" title="Settings"><IconSettings size={18} /></button>
