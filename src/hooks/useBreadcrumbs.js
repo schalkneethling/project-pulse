@@ -62,14 +62,21 @@ export function useBreadcrumbs(userId) {
   );
 
   const updateBreadcrumb = useCallback(async (id, updates) => {
-    const payload = {};
-    if ("note" in updates) payload.note = updates.note;
-    if ("who" in updates) payload.who = updates.who;
-    if ("source" in updates) payload.source = updates.source;
-    if ("sourceUrl" in updates) payload.source_url = updates.sourceUrl;
-    if ("projectId" in updates) payload.project_id = updates.projectId;
-    if ("status" in updates) payload.status = updates.status;
-    payload.updated_at = new Date().toISOString();
+    const FIELD_MAP = {
+      note: "note",
+      who: "who",
+      source: "source",
+      sourceUrl: "source_url",
+      projectId: "project_id",
+      status: "status",
+    };
+
+    const payload = { updated_at: new Date().toISOString() };
+    for (const [key, column] of Object.entries(FIELD_MAP)) {
+      if (key in updates) {
+        payload[column] = updates[key];
+      }
+    }
 
     const { error } = await supabase
       .from("breadcrumbs")
