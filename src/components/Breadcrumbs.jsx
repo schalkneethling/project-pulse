@@ -182,6 +182,7 @@ export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) 
       <div className="flex gap-2">
         {status !== "open" && (
           <button
+            type="button"
             onClick={() => onUpdate(id, { status: "open" })}
             className="text-xs text-slate-400 hover:text-sky-300 transition-colors"
           >
@@ -190,6 +191,7 @@ export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) 
         )}
         {status !== "waiting" && (
           <button
+            type="button"
             onClick={() => onUpdate(id, { status: "waiting" })}
             className="text-xs text-slate-400 hover:text-amber-300 transition-colors"
           >
@@ -198,6 +200,7 @@ export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) 
         )}
         {status !== "resolved" && (
           <button
+            type="button"
             onClick={() => onUpdate(id, { status: "resolved" })}
             className="text-xs text-slate-400 hover:text-emerald-300 transition-colors"
           >
@@ -205,6 +208,7 @@ export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) 
           </button>
         )}
         <button
+          type="button"
           onClick={() => onDelete(id)}
           className="text-xs text-slate-400 hover:text-red-400 transition-colors ml-auto"
         >
@@ -245,6 +249,7 @@ export function BreadcrumbList({ breadcrumbs, onUpdate, onDelete, projects }) {
         <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
           {STATUS_TABS.map((tab) => (
             <button
+              type="button"
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-3 py-1.5 text-sm rounded-md capitalize transition-colors ${
