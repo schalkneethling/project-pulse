@@ -9,8 +9,6 @@ export function BreadcrumbForm({ onCreate, projects }) {
   const [source, setSource] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [showDetails, setShowDetails] = useState(false);
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!note.trim()) return;
@@ -50,16 +48,11 @@ export function BreadcrumbForm({ onCreate, projects }) {
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowDetails(!showDetails)}
-        className="text-sm text-slate-400 hover:text-slate-300 transition-colors"
-      >
-        {showDetails ? "Less details" : "More details"}
-      </button>
-
-      {showDetails && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <details className="group">
+        <summary className="text-sm text-slate-400 hover:text-slate-300 transition-colors cursor-pointer list-none">
+          More details
+        </summary>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
           <div>
             <label htmlFor="breadcrumb-who" className="sr-only">Who was involved</label>
             <input
@@ -112,7 +105,7 @@ export function BreadcrumbForm({ onCreate, projects }) {
             </div>
           )}
         </div>
-      )}
+      </details>
     </form>
   );
 }

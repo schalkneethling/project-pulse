@@ -54,18 +54,16 @@ describe("BreadcrumbForm", () => {
     expect(input).toHaveValue("");
   });
 
-  it("reveals detail fields when 'More details' is toggled", async () => {
+  it("reveals detail fields when details/summary is toggled", async () => {
     const user = userEvent.setup();
-    render(<BreadcrumbForm onCreate={vi.fn()} />);
+    const { container } = render(<BreadcrumbForm onCreate={vi.fn()} />);
 
-    expect(
-      screen.queryByRole("textbox", { name: /who was involved/i })
-    ).not.toBeInTheDocument();
+    const details = container.querySelector("details");
+    expect(details).not.toHaveAttribute("open");
 
-    await user.click(
-      screen.getByRole("button", { name: /more details/i })
-    );
+    await user.click(screen.getByText(/more details/i));
 
+    expect(details).toHaveAttribute("open");
     expect(
       screen.getByRole("textbox", { name: /who was involved/i })
     ).toBeInTheDocument();
@@ -81,9 +79,7 @@ describe("BreadcrumbForm", () => {
       screen.getByRole("textbox", { name: /note/i }),
       "API design discussion"
     );
-    await user.click(
-      screen.getByRole("button", { name: /more details/i })
-    );
+    await user.click(screen.getByText(/more details/i));
     await user.type(
       screen.getByRole("textbox", { name: /who was involved/i }),
       "@alice"
