@@ -33,7 +33,9 @@ export function BreadcrumbForm({ onCreate, projects }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="flex gap-2">
+        <label htmlFor="breadcrumb-note" className="sr-only">Note</label>
         <input
+          id="breadcrumb-note"
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -58,40 +60,56 @@ export function BreadcrumbForm({ onCreate, projects }) {
 
       {showDetails && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input
-            type="text"
-            value={who}
-            onChange={(e) => setWho(e.target.value)}
-            placeholder="Who was involved? e.g. @alice, @bob"
-            className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-          />
-          <input
-            type="text"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-            placeholder="Where? e.g. #backend, DM, Jira-123"
-            className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-          />
-          <input
-            type="url"
-            value={sourceUrl}
-            onChange={(e) => setSourceUrl(e.target.value)}
-            placeholder="Link (optional)"
-            className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-          />
+          <div>
+            <label htmlFor="breadcrumb-who" className="sr-only">Who was involved</label>
+            <input
+              id="breadcrumb-who"
+              type="text"
+              value={who}
+              onChange={(e) => setWho(e.target.value)}
+              placeholder="Who was involved? e.g. @alice, @bob"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            />
+          </div>
+          <div>
+            <label htmlFor="breadcrumb-source" className="sr-only">Source</label>
+            <input
+              id="breadcrumb-source"
+              type="text"
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder="Where? e.g. #backend, DM, Jira-123"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            />
+          </div>
+          <div>
+            <label htmlFor="breadcrumb-source-url" className="sr-only">Source link</label>
+            <input
+              id="breadcrumb-source-url"
+              type="url"
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              placeholder="Link (optional)"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            />
+          </div>
           {projects?.length > 0 && (
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-            >
+            <div>
+              <label htmlFor="breadcrumb-project" className="sr-only">Linked project</label>
+              <select
+                id="breadcrumb-project"
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+              >
               <option value="">No project</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name || "Untitled"}
                 </option>
               ))}
-            </select>
+              </select>
+            </div>
           )}
         </div>
       )}
@@ -239,13 +257,17 @@ export function BreadcrumbList({ breadcrumbs, onUpdate, onDelete, projects }) {
             </button>
           ))}
         </div>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search breadcrumbs…"
-          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-        />
+        <div className="flex-1">
+          <label htmlFor="breadcrumb-search" className="sr-only">Search breadcrumbs</label>
+          <input
+            id="breadcrumb-search"
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search breadcrumbs…"
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+          />
+        </div>
       </div>
 
       <div className="space-y-3">
