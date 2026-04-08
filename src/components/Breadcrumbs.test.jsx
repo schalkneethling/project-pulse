@@ -12,7 +12,7 @@ describe("BreadcrumbForm", () => {
     render(<BreadcrumbForm onCreate={vi.fn()} />);
 
     expect(
-      screen.getByPlaceholderText(/what did you hear/i)
+      screen.getByRole("textbox", { name: /note/i })
     ).toBeInTheDocument();
   });
 
@@ -22,7 +22,7 @@ describe("BreadcrumbForm", () => {
     render(<BreadcrumbForm onCreate={onCreate} />);
 
     await user.type(
-      screen.getByPlaceholderText(/what did you hear/i),
+      screen.getByRole("textbox", { name: /note/i }),
       "Check auth with Alice"
     );
     await user.click(screen.getByRole("button", { name: /save/i }));
@@ -47,7 +47,7 @@ describe("BreadcrumbForm", () => {
     const user = userEvent.setup();
     render(<BreadcrumbForm onCreate={onCreate} />);
 
-    const input = screen.getByPlaceholderText(/what did you hear/i);
+    const input = screen.getByRole("textbox", { name: /note/i });
     await user.type(input, "Some note");
     await user.click(screen.getByRole("button", { name: /save/i }));
 
@@ -59,7 +59,7 @@ describe("BreadcrumbForm", () => {
     render(<BreadcrumbForm onCreate={vi.fn()} />);
 
     expect(
-      screen.queryByPlaceholderText(/who was involved/i)
+      screen.queryByRole("textbox", { name: /who was involved/i })
     ).not.toBeInTheDocument();
 
     await user.click(
@@ -67,9 +67,9 @@ describe("BreadcrumbForm", () => {
     );
 
     expect(
-      screen.getByPlaceholderText(/who was involved/i)
+      screen.getByRole("textbox", { name: /who was involved/i })
     ).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/where/i)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /^source$/i })).toBeInTheDocument();
   });
 
   it("includes detail fields in submission", async () => {
@@ -78,17 +78,17 @@ describe("BreadcrumbForm", () => {
     render(<BreadcrumbForm onCreate={onCreate} />);
 
     await user.type(
-      screen.getByPlaceholderText(/what did you hear/i),
+      screen.getByRole("textbox", { name: /note/i }),
       "API design discussion"
     );
     await user.click(
       screen.getByRole("button", { name: /more details/i })
     );
     await user.type(
-      screen.getByPlaceholderText(/who was involved/i),
+      screen.getByRole("textbox", { name: /who was involved/i }),
       "@alice"
     );
-    await user.type(screen.getByPlaceholderText(/where/i), "#backend");
+    await user.type(screen.getByRole("textbox", { name: /^source$/i }), "#backend");
     await user.click(screen.getByRole("button", { name: /save/i }));
 
     expect(onCreate).toHaveBeenCalledWith(
@@ -280,7 +280,7 @@ describe("BreadcrumbList", () => {
     );
 
     await user.type(
-      screen.getByPlaceholderText(/search/i),
+      screen.getByRole("textbox", { name: /search/i }),
       "deploy"
     );
 
@@ -299,7 +299,7 @@ describe("BreadcrumbList", () => {
     );
 
     await user.type(
-      screen.getByPlaceholderText(/search/i),
+      screen.getByRole("textbox", { name: /search/i }),
       "zzzznonexistent"
     );
 
