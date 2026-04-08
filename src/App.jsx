@@ -510,7 +510,7 @@ export default function App() {
                   key={v}
                   type="button"
                   onClick={() => setView(v)}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                     view === v
                       ? "bg-slate-700 text-white"
                       : "text-slate-400 hover:text-slate-200"
