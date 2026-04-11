@@ -72,6 +72,23 @@ function DeployBadge({ netlify }) {
   return <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${ds.color}`}><span className={`inline-block w-2 h-2 rounded-full ${ds.dot}`} aria-hidden="true" />{ds.label}</span>;
 }
 
+function GitHubBadge({ github }) {
+  if (!github?.activity) { return null; }
+  const { openPrs, totalIssues } = github.activity;
+  if (openPrs === 0 && totalIssues === 0) { return null; }
+
+  const parts = [];
+  if (openPrs > 0) { parts.push(`${openPrs} PR${openPrs !== 1 ? "s" : ""}`); }
+  if (totalIssues > 0) { parts.push(`${totalIssues} issue${totalIssues !== 1 ? "s" : ""}`); }
+
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+      <IconGithub size={11} />
+      {parts.join(" · ")}
+    </span>
+  );
+}
+
 /* ─── deploy card ────────────────────────────────────────── */
 function DeployCard({ netlify, onEdit, onRemove, onSync, syncing }) {
   if (!netlify) {
@@ -268,8 +285,11 @@ function GitHubCard({ github, onEdit, onRemove, onSync, syncing }) {
                 <p className="text-xs text-slate-500">Review</p>
               </div>
               <div className="rounded-lg bg-slate-900/50 border border-slate-700/50 p-2 text-center">
-                <p className={`text-lg font-bold ${a.assignedIssues > 0 ? "text-red-400" : "text-slate-400"}`}>{a.assignedIssues}</p>
+                <p className={`text-lg font-bold ${a.totalIssues > 0 ? "text-red-400" : "text-slate-400"}`}>{a.totalIssues}</p>
                 <p className="text-xs text-slate-500">Issues</p>
+                {a.assignedIssues > 0 && (
+                  <p className="text-xs text-slate-600 leading-tight">{a.assignedIssues} assigned</p>
+                )}
               </div>
             </div>
             {a.latestCommitMessage && (
@@ -344,7 +364,7 @@ function ProjList({ projects, onSelect }) {
                 {p.nextStep && <p className="mt-2 text-sm text-slate-500"><span className="text-slate-400 font-medium">Next:</span> {p.nextStep}</p>}
               </div>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <StatusBadge status={p.status} /><DeployBadge netlify={p.netlify} /><Stale updatedAt={p.updatedAt} />
+                <StatusBadge status={p.status} /><DeployBadge netlify={p.netlify} /><GitHubBadge github={p.github} /><Stale updatedAt={p.updatedAt} />
                 {total > 0 && <span className="text-xs text-slate-500">{done}/{total} tasks</span>}
               </div>
             </div>

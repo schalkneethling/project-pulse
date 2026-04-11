@@ -105,11 +105,12 @@ export default async (request) => {
     const base = `https://api.github.com/repos/${r.owner}/${r.repo}`;
 
     try {
-      // Fetch in parallel: open PRs, assigned issues, latest commit
-      const [prs, issues, commits] = await Promise.all([
+      // Fetch in parallel: open PRs, assigned issues, latest commit, repo metadata
+      const [prs, issues, commits, repoMeta] = await Promise.all([
         ghFetch(`${base}/pulls?state=open&per_page=100`),
         ghFetch(`${base}/issues?assignee=${ghUsername}&state=open&per_page=100`),
         ghFetch(`${base}/commits?per_page=1`),
+        ghFetch(base), // GET /repos/{owner}/{repo} → open_issues_count
       ]);
 
       const openPrs = Array.isArray(prs) ? prs.length : 0;
@@ -119,6 +120,11 @@ export default async (request) => {
           ).length
         : 0;
       const assignedIssues = Array.isArray(issues) ? issues.length : 0;
+      // GitHub's open_issues_count includes PRs, so subtract to get issues-only.
+      // Use != null so a legitimate 0 isn't treated as missing.
+      const totalIssues = repoMeta?.open_issues_count != null
+        ? Math.max(0, repoMeta.open_issues_count - openPrs)
+        : 0;
       const latestCommit = Array.isArray(commits) && commits[0]
         ? {
             at: commits[0].commit?.committer?.date || null,
@@ -140,6 +146,7 @@ export default async (request) => {
           open_prs: openPrs,
           review_requested_prs: reviewRequested,
           assigned_issues: assignedIssues,
+          total_issues: totalIssues,
           latest_commit_at: latestCommit.at,
           latest_commit_message: latestCommit.message,
           synced_at: new Date().toISOString(),
@@ -155,6 +162,7 @@ export default async (request) => {
           openPrs,
           reviewRequested,
           assignedIssues,
+          totalIssues,
         });
       }
     } catch (err) {
