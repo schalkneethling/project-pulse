@@ -452,6 +452,7 @@ function normalizeProject(row) {
             openPrs: activity.open_prs,
             reviewRequestedPrs: activity.review_requested_prs,
             assignedIssues: activity.assigned_issues,
+            totalIssues: activity.total_issues ?? 0,
             latestCommitAt: activity.latest_commit_at,
             latestCommitMessage: activity.latest_commit_message,
             syncedAt: activity.synced_at,
