@@ -1,28 +1,32 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
-  BreadcrumbForm,
-  BreadcrumbCard,
-  BreadcrumbList,
-} from "./Breadcrumbs";
+  TodoForm,
+  TodoCard,
+  TodoList,
+} from "./Todos";
 
-describe("BreadcrumbForm", () => {
-  it("renders the note input", () => {
-    render(<BreadcrumbForm onCreate={vi.fn()} />);
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+describe("TodoForm", () => {
+  it("renders the todo input", () => {
+    render(<TodoForm onCreate={vi.fn()} />);
 
     expect(
-      screen.getByRole("textbox", { name: /note/i })
+      screen.getByRole("textbox", { name: /todo/i })
     ).toBeInTheDocument();
   });
 
   it("calls onCreate with note when submitted", async () => {
     const onCreate = vi.fn();
     const user = userEvent.setup();
-    render(<BreadcrumbForm onCreate={onCreate} />);
+    render(<TodoForm onCreate={onCreate} />);
 
     await user.type(
-      screen.getByRole("textbox", { name: /note/i }),
+      screen.getByRole("textbox", { name: /todo/i }),
       "Check auth with Alice"
     );
     await user.click(screen.getByRole("button", { name: /save/i }));
@@ -35,7 +39,7 @@ describe("BreadcrumbForm", () => {
   it("does not submit when note is empty", async () => {
     const onCreate = vi.fn();
     const user = userEvent.setup();
-    render(<BreadcrumbForm onCreate={onCreate} />);
+    render(<TodoForm onCreate={onCreate} />);
 
     await user.click(screen.getByRole("button", { name: /save/i }));
 
@@ -45,9 +49,9 @@ describe("BreadcrumbForm", () => {
   it("clears the form after successful submission", async () => {
     const onCreate = vi.fn();
     const user = userEvent.setup();
-    render(<BreadcrumbForm onCreate={onCreate} />);
+    render(<TodoForm onCreate={onCreate} />);
 
-    const input = screen.getByRole("textbox", { name: /note/i });
+    const input = screen.getByRole("textbox", { name: /todo/i });
     await user.type(input, "Some note");
     await user.click(screen.getByRole("button", { name: /save/i }));
 
@@ -56,7 +60,7 @@ describe("BreadcrumbForm", () => {
 
   it("reveals detail fields when details/summary is toggled", async () => {
     const user = userEvent.setup();
-    const { container } = render(<BreadcrumbForm onCreate={vi.fn()} />);
+    const { container } = render(<TodoForm onCreate={vi.fn()} />);
 
     const details = container.querySelector("details");
     expect(details).not.toHaveAttribute("open");
@@ -65,26 +69,28 @@ describe("BreadcrumbForm", () => {
 
     expect(details).toHaveAttribute("open");
     expect(
-      screen.getByRole("textbox", { name: /who was involved/i })
+      screen.getByRole("textbox", { name: /who is involved/i })
     ).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /^source$/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/due date/i)).toBeInTheDocument();
   });
 
   it("includes detail fields in submission", async () => {
     const onCreate = vi.fn();
     const user = userEvent.setup();
-    render(<BreadcrumbForm onCreate={onCreate} />);
+    render(<TodoForm onCreate={onCreate} />);
 
     await user.type(
-      screen.getByRole("textbox", { name: /note/i }),
+      screen.getByRole("textbox", { name: /todo/i }),
       "API design discussion"
     );
     await user.click(screen.getByText(/more details/i));
     await user.type(
-      screen.getByRole("textbox", { name: /who was involved/i }),
+      screen.getByRole("textbox", { name: /who is involved/i }),
       "@alice"
     );
     await user.type(screen.getByRole("textbox", { name: /^source$/i }), "#backend");
+    await user.type(screen.getByLabelText(/due date/i), "2026-05-04");
     await user.click(screen.getByRole("button", { name: /save/i }));
 
     expect(onCreate).toHaveBeenCalledWith(
@@ -92,13 +98,14 @@ describe("BreadcrumbForm", () => {
         note: "API design discussion",
         who: "@alice",
         source: "#backend",
+        dueDate: "2026-05-04",
       })
     );
   });
 });
 
-describe("BreadcrumbCard", () => {
-  const baseCrumb = {
+describe("TodoCard", () => {
+  const baseTodo = {
     id: "b1",
     note: "Follow up on deploy pipeline",
     who: "@bob",
@@ -106,14 +113,15 @@ describe("BreadcrumbCard", () => {
     sourceUrl: null,
     projectId: null,
     status: "open",
+    dueDate: null,
     createdAt: "2026-04-01T10:00:00Z",
     updatedAt: "2026-04-01T10:00:00Z",
   };
 
   it("renders the note text", () => {
     render(
-      <BreadcrumbCard
-        breadcrumb={baseCrumb}
+      <TodoCard
+        todo={baseTodo}
         onUpdate={vi.fn()}
         onDelete={vi.fn()}
       />
@@ -124,8 +132,8 @@ describe("BreadcrumbCard", () => {
 
   it("renders who and source when present", () => {
     render(
-      <BreadcrumbCard
-        breadcrumb={baseCrumb}
+      <TodoCard
+        todo={baseTodo}
         onUpdate={vi.fn()}
         onDelete={vi.fn()}
       />
@@ -136,13 +144,13 @@ describe("BreadcrumbCard", () => {
   });
 
   it("renders URLs in notes as clickable links", () => {
-    const crumb = {
-      ...baseCrumb,
+    const todo = {
+      ...baseTodo,
       note: "See https://example.com/issue/123 for details",
     };
     render(
-      <BreadcrumbCard
-        breadcrumb={crumb}
+      <TodoCard
+        todo={todo}
         onUpdate={vi.fn()}
         onDelete={vi.fn()}
       />
@@ -162,14 +170,14 @@ describe("BreadcrumbCard", () => {
     const onUpdate = vi.fn();
     const user = userEvent.setup();
     render(
-      <BreadcrumbCard
-        breadcrumb={baseCrumb}
+      <TodoCard
+        todo={baseTodo}
         onUpdate={onUpdate}
         onDelete={vi.fn()}
       />
     );
 
-    await user.click(screen.getByRole("button", { name: /resolved/i }));
+    await user.click(screen.getByRole("button", { name: /done/i }));
 
     expect(onUpdate).toHaveBeenCalledWith("b1", { status: "resolved" });
   });
@@ -178,8 +186,8 @@ describe("BreadcrumbCard", () => {
     const onDelete = vi.fn();
     const user = userEvent.setup();
     render(
-      <BreadcrumbCard
-        breadcrumb={baseCrumb}
+      <TodoCard
+        todo={baseTodo}
         onUpdate={vi.fn()}
         onDelete={onDelete}
       />
@@ -189,10 +197,39 @@ describe("BreadcrumbCard", () => {
 
     expect(onDelete).toHaveBeenCalledWith("b1");
   });
+
+  it("turns yellow when due today", () => {
+    vi.setSystemTime(new Date("2026-04-30T12:00:00"));
+
+    const { container } = render(
+      <TodoCard
+        todo={{ ...baseTodo, dueDate: "2026-04-30" }}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(/due apr 30, 2026/i)).toBeInTheDocument();
+    expect(container.firstChild).toHaveClass("border-yellow-600/70");
+  });
+
+  it("turns red when late", () => {
+    vi.setSystemTime(new Date("2026-04-30T12:00:00"));
+
+    const { container } = render(
+      <TodoCard
+        todo={{ ...baseTodo, dueDate: "2026-04-29" }}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+
+    expect(container.firstChild).toHaveClass("border-red-600/70");
+  });
 });
 
-describe("BreadcrumbList", () => {
-  const crumbs = [
+describe("TodoList", () => {
+  const todos = [
     {
       id: "b1",
       note: "Auth discussion",
@@ -201,6 +238,7 @@ describe("BreadcrumbList", () => {
       sourceUrl: null,
       projectId: null,
       status: "open",
+      dueDate: null,
       createdAt: "2026-04-01T10:00:00Z",
       updatedAt: "2026-04-01T10:00:00Z",
     },
@@ -212,6 +250,7 @@ describe("BreadcrumbList", () => {
       sourceUrl: null,
       projectId: null,
       status: "resolved",
+      dueDate: null,
       createdAt: "2026-04-02T10:00:00Z",
       updatedAt: "2026-04-02T10:00:00Z",
     },
@@ -223,15 +262,16 @@ describe("BreadcrumbList", () => {
       sourceUrl: null,
       projectId: null,
       status: "waiting",
+      dueDate: null,
       createdAt: "2026-04-03T10:00:00Z",
       updatedAt: "2026-04-03T10:00:00Z",
     },
   ];
 
-  it("renders all breadcrumbs by default", () => {
+  it("renders all todos by default", () => {
     render(
-      <BreadcrumbList
-        breadcrumbs={crumbs}
+      <TodoList
+        todos={todos}
         onUpdate={vi.fn()}
         onDelete={vi.fn()}
       />
@@ -245,8 +285,8 @@ describe("BreadcrumbList", () => {
   it("filters by status when a tab is selected", async () => {
     const user = userEvent.setup();
     render(
-      <BreadcrumbList
-        breadcrumbs={crumbs}
+      <TodoList
+        todos={todos}
         onUpdate={vi.fn()}
         onDelete={vi.fn()}
       />
@@ -268,8 +308,8 @@ describe("BreadcrumbList", () => {
   it("filters by search text", async () => {
     const user = userEvent.setup();
     render(
-      <BreadcrumbList
-        breadcrumbs={crumbs}
+      <TodoList
+        todos={todos}
         onUpdate={vi.fn()}
         onDelete={vi.fn()}
       />
@@ -284,11 +324,11 @@ describe("BreadcrumbList", () => {
     expect(screen.queryByText(/auth discussion/i)).not.toBeInTheDocument();
   });
 
-  it("shows empty state when no breadcrumbs match", async () => {
+  it("shows empty state when no todos match", async () => {
     const user = userEvent.setup();
     render(
-      <BreadcrumbList
-        breadcrumbs={crumbs}
+      <TodoList
+        todos={todos}
         onUpdate={vi.fn()}
         onDelete={vi.fn()}
       />
@@ -299,6 +339,6 @@ describe("BreadcrumbList", () => {
       "zzzznonexistent"
     );
 
-    expect(screen.getByText(/no breadcrumbs/i)).toBeInTheDocument();
+    expect(screen.getByText(/no todos/i)).toBeInTheDocument();
   });
 });

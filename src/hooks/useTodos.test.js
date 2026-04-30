@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useBreadcrumbs } from "./useBreadcrumbs";
+import { useTodos } from "./useTodos";
 import { supabase } from "../lib/supabase";
 
 vi.mock("../lib/supabase");
@@ -25,12 +25,12 @@ function mockChain(resolvedValue = { data: [], error: null }) {
   return chain;
 }
 
-describe("useBreadcrumbs", () => {
+describe("useTodos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("fetches breadcrumbs on mount", async () => {
+  it("fetches todos on mount", async () => {
     const rows = [
       {
         id: "b1",
@@ -41,6 +41,7 @@ describe("useBreadcrumbs", () => {
         source_url: null,
         project_id: null,
         status: "open",
+        due_date: "2026-04-30",
         created_at: "2026-04-01T10:00:00Z",
         updated_at: "2026-04-01T10:00:00Z",
       },
@@ -48,14 +49,14 @@ describe("useBreadcrumbs", () => {
 
     supabase.from.mockReturnValue(mockChain({ data: rows, error: null }));
 
-    const { result } = renderHook(() => useBreadcrumbs(USER_ID));
+    const { result } = renderHook(() => useTodos(USER_ID));
 
     // Wait for useEffect to resolve
     await act(() => Promise.resolve());
 
     expect(supabase.from).toHaveBeenCalledWith("breadcrumbs");
-    expect(result.current.breadcrumbs).toHaveLength(1);
-    expect(result.current.breadcrumbs[0]).toEqual({
+    expect(result.current.todos).toHaveLength(1);
+    expect(result.current.todos[0]).toEqual({
       id: "b1",
       note: "Check auth approach with Alice",
       who: "@alice",
@@ -63,6 +64,7 @@ describe("useBreadcrumbs", () => {
       sourceUrl: null,
       projectId: null,
       status: "open",
+      dueDate: "2026-04-30",
       createdAt: "2026-04-01T10:00:00Z",
       updatedAt: "2026-04-01T10:00:00Z",
     });
@@ -70,15 +72,15 @@ describe("useBreadcrumbs", () => {
   });
 
   it("returns empty array when userId is not provided", async () => {
-    const { result } = renderHook(() => useBreadcrumbs(null));
+    const { result } = renderHook(() => useTodos(null));
 
     await act(() => Promise.resolve());
 
     expect(supabase.from).not.toHaveBeenCalled();
-    expect(result.current.breadcrumbs).toEqual([]);
+    expect(result.current.todos).toEqual([]);
   });
 
-  it("creates a breadcrumb and updates state optimistically", async () => {
+  it("creates a todo and updates state optimistically", async () => {
     const newRow = {
       id: "b2",
       user_id: USER_ID,
@@ -88,6 +90,7 @@ describe("useBreadcrumbs", () => {
       source_url: null,
       project_id: null,
       status: "open",
+      due_date: "2026-05-04",
       created_at: "2026-04-08T12:00:00Z",
       updated_at: "2026-04-08T12:00:00Z",
     };
@@ -99,22 +102,24 @@ describe("useBreadcrumbs", () => {
         mockChain({ data: newRow, error: null })
       );
 
-    const { result } = renderHook(() => useBreadcrumbs(USER_ID));
+    const { result } = renderHook(() => useTodos(USER_ID));
     await act(() => Promise.resolve());
 
     await act(async () => {
-      await result.current.createBreadcrumb({
+      await result.current.createTodo({
         note: "Discuss deploy pipeline",
+        dueDate: "2026-05-04",
       });
     });
 
-    expect(result.current.breadcrumbs).toHaveLength(1);
-    expect(result.current.breadcrumbs[0].note).toBe(
+    expect(result.current.todos).toHaveLength(1);
+    expect(result.current.todos[0].note).toBe(
       "Discuss deploy pipeline"
     );
+    expect(result.current.todos[0].dueDate).toBe("2026-05-04");
   });
 
-  it("updates a breadcrumb status", async () => {
+  it("updates a todo status and due date", async () => {
     const rows = [
       {
         id: "b1",
@@ -125,6 +130,7 @@ describe("useBreadcrumbs", () => {
         source_url: null,
         project_id: null,
         status: "open",
+        due_date: null,
         created_at: "2026-04-01T10:00:00Z",
         updated_at: "2026-04-01T10:00:00Z",
       },
@@ -134,17 +140,18 @@ describe("useBreadcrumbs", () => {
       .mockReturnValueOnce(mockChain({ data: rows, error: null }))
       .mockReturnValueOnce(mockChain({ data: null, error: null }));
 
-    const { result } = renderHook(() => useBreadcrumbs(USER_ID));
+    const { result } = renderHook(() => useTodos(USER_ID));
     await act(() => Promise.resolve());
 
     await act(async () => {
-      await result.current.updateBreadcrumb("b1", { status: "resolved" });
+      await result.current.updateTodo("b1", { status: "resolved", dueDate: "2026-05-01" });
     });
 
-    expect(result.current.breadcrumbs[0].status).toBe("resolved");
+    expect(result.current.todos[0].status).toBe("resolved");
+    expect(result.current.todos[0].dueDate).toBe("2026-05-01");
   });
 
-  it("deletes a breadcrumb", async () => {
+  it("deletes a todo", async () => {
     const rows = [
       {
         id: "b1",
@@ -155,6 +162,7 @@ describe("useBreadcrumbs", () => {
         source_url: null,
         project_id: null,
         status: "open",
+        due_date: null,
         created_at: "2026-04-01T10:00:00Z",
         updated_at: "2026-04-01T10:00:00Z",
       },
@@ -164,14 +172,14 @@ describe("useBreadcrumbs", () => {
       .mockReturnValueOnce(mockChain({ data: rows, error: null }))
       .mockReturnValueOnce(mockChain({ data: null, error: null }));
 
-    const { result } = renderHook(() => useBreadcrumbs(USER_ID));
+    const { result } = renderHook(() => useTodos(USER_ID));
     await act(() => Promise.resolve());
 
     await act(async () => {
-      await result.current.deleteBreadcrumb("b1");
+      await result.current.deleteTodo("b1");
     });
 
-    expect(result.current.breadcrumbs).toHaveLength(0);
+    expect(result.current.todos).toHaveLength(0);
   });
 
   it("sets error when fetch fails", async () => {
@@ -179,10 +187,10 @@ describe("useBreadcrumbs", () => {
       mockChain({ data: null, error: { message: "Network error" } })
     );
 
-    const { result } = renderHook(() => useBreadcrumbs(USER_ID));
+    const { result } = renderHook(() => useTodos(USER_ID));
     await act(() => Promise.resolve());
 
     expect(result.current.error).toBe("Network error");
-    expect(result.current.breadcrumbs).toEqual([]);
+    expect(result.current.todos).toEqual([]);
   });
 });

@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
 import { useSettings } from "./hooks/useSettings";
-import { useBreadcrumbs } from "./hooks/useBreadcrumbs";
+import { useTodos } from "./hooks/useTodos";
 import { LoginScreen } from "./components/LoginScreen";
-import { BreadcrumbForm, BreadcrumbList, BreadcrumbCard } from "./components/Breadcrumbs";
+import { TodoForm, TodoList, TodoCard } from "./components/Todos";
 import { daysSince, fmtDate, fmtDateTime, fmtDuration, timeAgo } from "./lib/helpers";
 
 /* ─── constants ──────────────────────────────────────────── */
@@ -388,7 +388,7 @@ function Editable({ field, label, value, multi, editing, tempValue, onTempChange
 }
 
 /* ─── project detail ─────────────────────────────────────── */
-function Detail({ project, actions, breadcrumbs, onUpdateBreadcrumb, onDeleteBreadcrumb, onBack }) {
+function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack }) {
   const [editingField, setEditingField] = useState(null);
   const [tempValue, setTempValue] = useState("");
   const [newTask, setNewTask] = useState("");
@@ -454,12 +454,12 @@ function Detail({ project, actions, breadcrumbs, onUpdateBreadcrumb, onDeleteBre
         {project.tasks.length === 0 && <p className="text-sm text-slate-500 text-center py-6">No tasks yet — add one above</p>}
       </section>
 
-      {breadcrumbs?.length > 0 && (
+      {todos?.length > 0 && (
         <section>
-          <h3 className="text-lg font-semibold text-slate-200 mb-4">Breadcrumbs</h3>
+          <h3 className="text-lg font-semibold text-slate-200 mb-4">TODOs</h3>
           <div className="space-y-3">
-            {breadcrumbs.map((b) => (
-              <BreadcrumbCard key={b.id} breadcrumb={b} onUpdate={onUpdateBreadcrumb} onDelete={onDeleteBreadcrumb} />
+            {todos.map((todo) => (
+              <TodoCard key={todo.id} todo={todo} onUpdate={onUpdateTodo} onDelete={onDeleteTodo} />
             ))}
           </div>
         </section>
@@ -489,8 +489,8 @@ export default function App() {
   } = useProjects(user?.id);
   const { saveTokens } = useSettings(user?.id);
   const {
-    breadcrumbs, createBreadcrumb, updateBreadcrumb, deleteBreadcrumb,
-  } = useBreadcrumbs(user?.id);
+    todos, createTodo, updateTodo, deleteTodo,
+  } = useTodos(user?.id);
 
   const [view, setView] = useState("overview");
   const [selectedId, setSelectedId] = useState(null);
@@ -524,7 +524,7 @@ export default function App() {
               {[
                 ["overview", "Overview"],
                 ["projects", `Projects (${projects.length})`],
-                ["breadcrumbs", "Breadcrumbs"],
+                ["todos", "TODOs"],
               ].map(([v, label]) => (
                 <button
                   key={v}
@@ -556,15 +556,15 @@ export default function App() {
           </div>
         )}
 
-        {view === "breadcrumbs" && (
+        {view === "todos" && (
           <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-slate-100">Breadcrumbs</h1>
-            <BreadcrumbForm onCreate={createBreadcrumb} projects={projects} />
-            <BreadcrumbList breadcrumbs={breadcrumbs} onUpdate={updateBreadcrumb} onDelete={deleteBreadcrumb} projects={projects} />
+            <h1 className="text-2xl font-bold text-slate-100">TODOs</h1>
+            <TodoForm onCreate={createTodo} projects={projects} />
+            <TodoList todos={todos} onUpdate={updateTodo} onDelete={deleteTodo} projects={projects} />
           </div>
         )}
 
-        {view === "detail" && selected && <Detail project={selected} actions={actions} breadcrumbs={breadcrumbs.filter((b) => b.projectId === selected.id)} onUpdateBreadcrumb={updateBreadcrumb} onDeleteBreadcrumb={deleteBreadcrumb} onBack={() => setView("overview")} />}
+        {view === "detail" && selected && <Detail project={selected} actions={actions} todos={todos.filter((todo) => todo.projectId === selected.id)} onUpdateTodo={updateTodo} onDeleteTodo={deleteTodo} onBack={() => setView("overview")} />}
       </div>
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} saveTokens={saveTokens} />}
     </div>

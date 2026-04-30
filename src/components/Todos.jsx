@@ -2,13 +2,14 @@ import { useState } from "react";
 import { linkify } from "../lib/linkify";
 import { timeAgo } from "../lib/helpers";
 
-// ─── Quick-capture form ────────────────────────────────────
-export function BreadcrumbForm({ onCreate, projects }) {
+export function TodoForm({ onCreate, projects }) {
   const [note, setNote] = useState("");
   const [who, setWho] = useState("");
   const [source, setSource] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [dueDate, setDueDate] = useState("");
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!note.trim()) return;
@@ -19,6 +20,7 @@ export function BreadcrumbForm({ onCreate, projects }) {
       source: source.trim() || undefined,
       sourceUrl: sourceUrl.trim() || undefined,
       projectId: projectId || undefined,
+      dueDate: dueDate || undefined,
     });
 
     setNote("");
@@ -26,18 +28,19 @@ export function BreadcrumbForm({ onCreate, projects }) {
     setSource("");
     setSourceUrl("");
     setProjectId("");
+    setDueDate("");
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="flex gap-2">
-        <label htmlFor="breadcrumb-note" className="sr-only">Note</label>
+        <label htmlFor="todo-note" className="sr-only">Todo</label>
         <input
-          id="breadcrumb-note"
+          id="todo-note"
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="What did you hear? Quick-capture a breadcrumb…"
+          placeholder="Add a todo..."
           className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
         />
         <button
@@ -54,20 +57,20 @@ export function BreadcrumbForm({ onCreate, projects }) {
         </summary>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
           <div>
-            <label htmlFor="breadcrumb-who" className="sr-only">Who was involved</label>
+            <label htmlFor="todo-who" className="sr-only">Who is involved</label>
             <input
-              id="breadcrumb-who"
+              id="todo-who"
               type="text"
               value={who}
               onChange={(e) => setWho(e.target.value)}
-              placeholder="Who was involved? e.g. @alice, @bob"
+              placeholder="Who is involved? e.g. @alice, @bob"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
           </div>
           <div>
-            <label htmlFor="breadcrumb-source" className="sr-only">Source</label>
+            <label htmlFor="todo-source" className="sr-only">Source</label>
             <input
-              id="breadcrumb-source"
+              id="todo-source"
               type="text"
               value={source}
               onChange={(e) => setSource(e.target.value)}
@@ -76,9 +79,9 @@ export function BreadcrumbForm({ onCreate, projects }) {
             />
           </div>
           <div>
-            <label htmlFor="breadcrumb-source-url" className="sr-only">Source link</label>
+            <label htmlFor="todo-source-url" className="sr-only">Source link</label>
             <input
-              id="breadcrumb-source-url"
+              id="todo-source-url"
               type="url"
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}
@@ -86,11 +89,21 @@ export function BreadcrumbForm({ onCreate, projects }) {
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
           </div>
+          <div>
+            <label htmlFor="todo-due-date" className="sr-only">Due date</label>
+            <input
+              id="todo-due-date"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            />
+          </div>
           {projects?.length > 0 && (
             <div>
-              <label htmlFor="breadcrumb-project" className="sr-only">Linked project</label>
+              <label htmlFor="todo-project" className="sr-only">Linked project</label>
               <select
-                id="breadcrumb-project"
+                id="todo-project"
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
@@ -110,20 +123,29 @@ export function BreadcrumbForm({ onCreate, projects }) {
   );
 }
 
-// ─── Single breadcrumb card ────────────────────────────────
-export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) {
-  const { id, note, who, source, sourceUrl, status, createdAt } = breadcrumb;
+export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
+  const { id, note, who, source, sourceUrl, status, dueDate, createdAt } = todo;
 
   const statusStyles = {
     open: "bg-sky-500/20 text-sky-300",
     waiting: "bg-amber-500/20 text-amber-300",
     resolved: "bg-emerald-500/20 text-emerald-300",
   };
+  const statusLabels = {
+    open: "open",
+    waiting: "waiting",
+    resolved: "done",
+  };
+  const dueState = getDueState(dueDate, status);
+  const dueStyles = {
+    today: "bg-yellow-950/40 border-yellow-600/70",
+    late: "bg-red-950/40 border-red-600/70",
+  };
 
   const segments = linkify(note);
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-3">
+    <div className={`bg-slate-800/50 border rounded-xl p-4 space-y-3 ${dueStyles[dueState] || "border-slate-700/50"}`}>
       <div className="flex items-start justify-between gap-3">
         <p className="text-slate-200 flex-1">
           {segments.map((seg, i) =>
@@ -145,15 +167,15 @@ export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) 
         <span
           className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${statusStyles[status]}`}
         >
-          {status}
+          {statusLabels[status] || status}
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-        {who && <span>👤 {who}</span>}
+        {who && <span>Who: {who}</span>}
         {source && (
           <span>
-            📍{" "}
+            Source:{" "}
             {sourceUrl ? (
               <a
                 href={sourceUrl}
@@ -168,7 +190,12 @@ export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) 
             )}
           </span>
         )}
-        {projectName && <span>📁 {projectName}</span>}
+        {projectName && <span>Project: {projectName}</span>}
+        {dueDate && (
+          <span className={dueState === "late" ? "text-red-300" : dueState === "today" ? "text-yellow-300" : ""}>
+            Due {formatDateKey(dueDate)}
+          </span>
+        )}
         <span>{timeAgo(createdAt)}</span>
       </div>
 
@@ -197,7 +224,7 @@ export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) 
             onClick={() => onUpdate(id, { status: "resolved" })}
             className="text-xs text-slate-400 hover:text-emerald-300 transition-colors"
           >
-            Resolved
+            Done
           </button>
         )}
         <button
@@ -212,10 +239,14 @@ export function BreadcrumbCard({ breadcrumb, onUpdate, onDelete, projectName }) 
   );
 }
 
-// ─── Filterable breadcrumb list ────────────────────────────
-const STATUS_TABS = ["all", "open", "waiting", "resolved"];
+const STATUS_TABS = [
+  ["all", "all"],
+  ["open", "open"],
+  ["waiting", "waiting"],
+  ["resolved", "done"],
+];
 
-export function BreadcrumbList({ breadcrumbs, onUpdate, onDelete, projects }) {
+export function TodoList({ todos, onUpdate, onDelete, projects }) {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
 
@@ -223,11 +254,11 @@ export function BreadcrumbList({ breadcrumbs, onUpdate, onDelete, projects }) {
     (projects || []).map((p) => [p.id, p.name || "Untitled"])
   );
 
-  const filtered = breadcrumbs.filter((b) => {
-    if (activeTab !== "all" && b.status !== activeTab) return false;
+  const filtered = todos.filter((todo) => {
+    if (activeTab !== "all" && todo.status !== activeTab) return false;
     if (search) {
       const q = search.toLowerCase();
-      const haystack = [b.note, b.who, b.source]
+      const haystack = [todo.note, todo.who, todo.source]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -240,7 +271,7 @@ export function BreadcrumbList({ breadcrumbs, onUpdate, onDelete, projects }) {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1">
-          {STATUS_TABS.map((tab) => (
+          {STATUS_TABS.map(([tab, label]) => (
             <button
               type="button"
               key={tab}
@@ -251,18 +282,18 @@ export function BreadcrumbList({ breadcrumbs, onUpdate, onDelete, projects }) {
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
-              {tab}
+              {label}
             </button>
           ))}
         </div>
         <div className="flex-1">
-          <label htmlFor="breadcrumb-search" className="sr-only">Search breadcrumbs</label>
+          <label htmlFor="todo-search" className="sr-only">Search todos</label>
           <input
-            id="breadcrumb-search"
+            id="todo-search"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search breadcrumbs…"
+            placeholder="Search todos..."
             className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
           />
         </div>
@@ -271,20 +302,49 @@ export function BreadcrumbList({ breadcrumbs, onUpdate, onDelete, projects }) {
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <p className="text-center text-slate-500 py-8">
-            No breadcrumbs found.
+            No todos found.
           </p>
         ) : (
-          filtered.map((b) => (
-            <BreadcrumbCard
-              key={b.id}
-              breadcrumb={b}
+          filtered.map((todo) => (
+            <TodoCard
+              key={todo.id}
+              todo={todo}
               onUpdate={onUpdate}
               onDelete={onDelete}
-              projectName={b.projectId ? projectMap[b.projectId] : null}
+              projectName={todo.projectId ? projectMap[todo.projectId] : null}
             />
           ))
         )}
       </div>
     </div>
+  );
+}
+
+function getDueState(dueDate, status) {
+  if (!dueDate || status === "resolved") return null;
+
+  const today = new Date();
+  const todayKey = toDateKey(today);
+
+  if (dueDate === todayKey) return "today";
+  return dueDate < todayKey ? "late" : null;
+}
+
+function toDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateKey(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(
+    navigator?.languages?.[0] ?? "en-ZA",
+    {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }
   );
 }

@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
-export function useBreadcrumbs(userId) {
-  const [breadcrumbs, setBreadcrumbs] = useState([]);
+export function useTodos(userId) {
+  const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchBreadcrumbs = useCallback(async (signal) => {
+  const fetchTodos = useCallback(async (signal) => {
     if (!userId) return;
 
     const { data, error: fetchError } = await supabase
@@ -20,9 +20,9 @@ export function useBreadcrumbs(userId) {
 
     if (fetchError) {
       setError(fetchError.message);
-      console.error("Fetch breadcrumbs error:", fetchError);
+      console.error("Fetch todos error:", fetchError);
     } else {
-      setBreadcrumbs((data || []).map(normalize));
+      setTodos((data || []).map(normalize));
     }
 
     setLoading(false);
@@ -30,12 +30,12 @@ export function useBreadcrumbs(userId) {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchBreadcrumbs(controller.signal);
+    fetchTodos(controller.signal);
     return () => controller.abort();
-  }, [fetchBreadcrumbs]);
+  }, [fetchTodos]);
 
-  const createBreadcrumb = useCallback(
-    async ({ note, who, source, sourceUrl, projectId }) => {
+  const createTodo = useCallback(
+    async ({ note, who, source, sourceUrl, projectId, dueDate }) => {
       const { data, error } = await supabase
         .from("breadcrumbs")
         .insert({
@@ -45,23 +45,24 @@ export function useBreadcrumbs(userId) {
           source: source || null,
           source_url: sourceUrl || null,
           project_id: projectId || null,
+          due_date: dueDate || null,
         })
         .select()
         .single();
 
       if (error) {
-        console.error("Create breadcrumb error:", error);
+        console.error("Create todo error:", error);
         return null;
       }
 
       const created = normalize(data);
-      setBreadcrumbs((prev) => [created, ...prev]);
+      setTodos((prev) => [created, ...prev]);
       return created;
     },
     [userId]
   );
 
-  const updateBreadcrumb = useCallback(async (id, updates) => {
+  const updateTodo = useCallback(async (id, updates) => {
     const FIELD_MAP = {
       note: "note",
       who: "who",
@@ -69,6 +70,7 @@ export function useBreadcrumbs(userId) {
       sourceUrl: "source_url",
       projectId: "project_id",
       status: "status",
+      dueDate: "due_date",
     };
 
     const payload = { updated_at: new Date().toISOString() };
@@ -84,41 +86,41 @@ export function useBreadcrumbs(userId) {
       .eq("id", id);
 
     if (error) {
-      console.error("Update breadcrumb error:", error);
+      console.error("Update todo error:", error);
       return;
     }
 
-    setBreadcrumbs((prev) =>
-      prev.map((b) =>
-        b.id === id
-          ? { ...b, ...updates, updatedAt: payload.updated_at }
-          : b
+    setTodos((prev) =>
+      prev.map((todo) =>
+        todo.id === id
+          ? { ...todo, ...updates, updatedAt: payload.updated_at }
+          : todo
       )
     );
   }, []);
 
-  const deleteBreadcrumb = useCallback(async (id) => {
+  const deleteTodo = useCallback(async (id) => {
     const { error } = await supabase
       .from("breadcrumbs")
       .delete()
       .eq("id", id);
 
     if (error) {
-      console.error("Delete breadcrumb error:", error);
+      console.error("Delete todo error:", error);
       return;
     }
 
-    setBreadcrumbs((prev) => prev.filter((b) => b.id !== id));
+    setTodos((prev) => prev.filter((todo) => todo.id !== id));
   }, []);
 
   return {
-    breadcrumbs,
+    todos,
     loading,
     error,
-    createBreadcrumb,
-    updateBreadcrumb,
-    deleteBreadcrumb,
-    refetch: fetchBreadcrumbs,
+    createTodo,
+    updateTodo,
+    deleteTodo,
+    refetch: fetchTodos,
   };
 }
 
@@ -131,6 +133,7 @@ function normalize(row) {
     sourceUrl: row.source_url,
     projectId: row.project_id,
     status: row.status,
+    dueDate: row.due_date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
