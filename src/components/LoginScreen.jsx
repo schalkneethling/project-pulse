@@ -8,12 +8,8 @@ export function LoginScreen({ onSignIn, loading, mode = "single" }) {
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
       <div className="max-w-sm w-full text-center space-y-8">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-100">
-            Project Pulse
-          </h1>
-          <p className="mt-2 text-slate-400">
-            Track your side projects, see what needs you.
-          </p>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-100">Project Pulse</h1>
+          <p className="mt-2 text-slate-400">Track your side projects, see what needs you.</p>
         </div>
 
         {showSignIn ? (
@@ -23,12 +19,7 @@ export function LoginScreen({ onSignIn, loading, mode = "single" }) {
               disabled={loading}
               className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white hover:bg-gray-50 text-gray-800 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
                   fill="#4285F4"

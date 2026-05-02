@@ -32,9 +32,7 @@ test.describe("NetlifyModal", () => {
     expect(focused).toBe(true);
   });
 
-  test("focus is trapped – Tab wraps from last to first element", async ({
-    page,
-  }) => {
+  test("focus is trapped – Tab wraps from last to first element", async ({ page }) => {
     await page.click('button:has-text("Open Netlify Modal")');
 
     const focusable = await getFocusableInDialog(page);
@@ -56,9 +54,7 @@ test.describe("NetlifyModal", () => {
     await expect(page.locator("dialog[open]")).toBeAttached();
   });
 
-  test("Shift+Tab wraps from first to last focusable element", async ({
-    page,
-  }) => {
+  test("Shift+Tab wraps from first to last focusable element", async ({ page }) => {
     await page.click('button:has-text("Open Netlify Modal")');
 
     const focusable = await getFocusableInDialog(page);
@@ -126,9 +122,7 @@ test.describe("SettingsModal", () => {
     expect(focused).toBe(true);
   });
 
-  test("focus is trapped – Tab wraps from last to first element", async ({
-    page,
-  }) => {
+  test("focus is trapped – Tab wraps from last to first element", async ({ page }) => {
     await page.click('button:has-text("Open Settings Modal")');
 
     const focusable = await getFocusableInDialog(page);
@@ -183,9 +177,7 @@ test.describe("GitHubModal", () => {
     expect(focused).toBe(true);
   });
 
-  test("focus is trapped – Tab wraps from last to first element", async ({
-    page,
-  }) => {
+  test("focus is trapped – Tab wraps from last to first element", async ({ page }) => {
     await page.click('button:has-text("Open GitHub Modal")');
 
     const focusable = await getFocusableInDialog(page);

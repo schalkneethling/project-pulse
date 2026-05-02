@@ -29,9 +29,7 @@ export function GitHubModal({ github, onSave, onClose }) {
       onClose={onClose}
       className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4"
     >
-      <h2 className="text-lg font-semibold text-slate-200">
-        Link GitHub Repo
-      </h2>
+      <h2 className="text-lg font-semibold text-slate-200">Link GitHub Repo</h2>
       <div>
         <label htmlFor="github-owner" className={lc}>
           Owner / Organization

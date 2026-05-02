@@ -20,6 +20,7 @@ function mockChain(resolvedValue = { data: [], error: null }) {
     order: vi.fn().mockReturnThis(),
     abortSignal: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue(resolvedValue),
+    // eslint-disable-next-line unicorn/no-thenable -- intentional: mock must be awaitable
     then: (resolve) => resolve(resolvedValue),
   };
   return chain;
@@ -98,9 +99,7 @@ describe("useTodos", () => {
     // First call: fetch (empty), second call: insert
     supabase.from
       .mockReturnValueOnce(mockChain({ data: [], error: null }))
-      .mockReturnValueOnce(
-        mockChain({ data: newRow, error: null })
-      );
+      .mockReturnValueOnce(mockChain({ data: newRow, error: null }));
 
     const { result } = renderHook(() => useTodos(USER_ID));
     await act(() => Promise.resolve());
@@ -113,9 +112,7 @@ describe("useTodos", () => {
     });
 
     expect(result.current.todos).toHaveLength(1);
-    expect(result.current.todos[0].note).toBe(
-      "Discuss deploy pipeline"
-    );
+    expect(result.current.todos[0].note).toBe("Discuss deploy pipeline");
     expect(result.current.todos[0].dueDate).toBe("2026-05-04");
   });
 
@@ -183,9 +180,7 @@ describe("useTodos", () => {
   });
 
   it("sets error when fetch fails", async () => {
-    supabase.from.mockReturnValue(
-      mockChain({ data: null, error: { message: "Network error" } })
-    );
+    supabase.from.mockReturnValue(mockChain({ data: null, error: { message: "Network error" } }));
 
     const { result } = renderHook(() => useTodos(USER_ID));
     await act(() => Promise.resolve());

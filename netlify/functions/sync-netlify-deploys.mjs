@@ -39,7 +39,10 @@ export default async (request) => {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   // Verify the user's JWT and get their uid
-  const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(accessToken);
 
   if (authError || !user) {
     return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
@@ -62,7 +65,7 @@ export default async (request) => {
   if (!netlifyToken) {
     return new Response(
       JSON.stringify({ error: "No Netlify API token configured. Add one in Settings." }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: { "Content-Type": "application/json" } },
     );
   }
 
@@ -95,7 +98,7 @@ export default async (request) => {
     try {
       const res = await fetch(
         `https://api.netlify.com/api/v1/sites/${site.netlify_site_id}/deploys?per_page=1`,
-        { headers: { Authorization: `Bearer ${netlifyToken}` } }
+        { headers: { Authorization: `Bearer ${netlifyToken}` } },
       );
 
       if (!res.ok) {
@@ -114,7 +117,8 @@ export default async (request) => {
       // Map Netlify API state to our schema states
       let state = "ready";
       if (d.state === "error" || d.state === "build_error") state = "error";
-      else if (d.state === "building" || d.state === "uploading" || d.state === "processing") state = "building";
+      else if (d.state === "building" || d.state === "uploading" || d.state === "processing")
+        state = "building";
       else if (d.state === "enqueued" || d.state === "new") state = "enqueued";
       else if (d.state === "ready") state = "ready";
 
@@ -130,14 +134,9 @@ export default async (request) => {
       };
 
       // Delete old deploys for this site, then insert the latest
-      await supabase
-        .from("netlify_deploys")
-        .delete()
-        .eq("netlify_site_id", site.id);
+      await supabase.from("netlify_deploys").delete().eq("netlify_site_id", site.id);
 
-      const { error: insertError } = await supabase
-        .from("netlify_deploys")
-        .insert(deployPayload);
+      const { error: insertError } = await supabase.from("netlify_deploys").insert(deployPayload);
 
       if (insertError) {
         results.push({ siteId: site.id, error: insertError.message });
@@ -149,10 +148,10 @@ export default async (request) => {
     }
   }
 
-  return new Response(
-    JSON.stringify({ synced: results.filter((r) => !r.error).length, results }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
-  );
+  return new Response(JSON.stringify({ synced: results.filter((r) => !r.error).length, results }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 };
 
 export const config = {

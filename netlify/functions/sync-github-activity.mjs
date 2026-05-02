@@ -34,7 +34,10 @@ export default async (request) => {
 
   const supabase = createClient(supabaseUrl, serviceKey);
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser(accessToken);
 
   if (authError || !user) {
     return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
@@ -57,7 +60,7 @@ export default async (request) => {
   if (!githubToken) {
     return new Response(
       JSON.stringify({ error: "No GitHub token configured. Add one in Settings." }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      { status: 400, headers: { "Content-Type": "application/json" } },
     );
   }
 
@@ -144,15 +147,11 @@ export default async (request) => {
 
       const openPrs = Array.isArray(prs) ? prs.length : 0;
       const reviewRequested = Array.isArray(prs)
-        ? prs.filter((pr) =>
-            pr.requested_reviewers?.some((rev) => rev.login === ghUsername)
-          ).length
+        ? prs.filter((pr) => pr.requested_reviewers?.some((rev) => rev.login === ghUsername)).length
         : 0;
       const reviewRequestedPrDetails = Array.isArray(prs)
         ? mapGitHubItemDetails(
-            prs.filter((pr) =>
-              pr.requested_reviewers?.some((rev) => rev.login === ghUsername)
-            )
+            prs.filter((pr) => pr.requested_reviewers?.some((rev) => rev.login === ghUsername)),
           )
         : [];
       const assignedIssueDetails = Array.isArray(issues)
@@ -161,37 +160,32 @@ export default async (request) => {
       const assignedIssues = assignedIssueDetails.length;
       // GitHub's open_issues_count includes PRs, so subtract to get issues-only.
       // Use != null so a legitimate 0 isn't treated as missing.
-      const totalIssues = repoMeta?.open_issues_count != null
-        ? Math.max(0, repoMeta.open_issues_count - openPrs)
-        : 0;
-      const latestCommit = Array.isArray(commits) && commits[0]
-        ? {
-            at: commits[0].commit?.committer?.date || null,
-            message: commits[0].commit?.message || null,
-          }
-        : { at: null, message: null };
+      const totalIssues =
+        repoMeta?.open_issues_count != null ? Math.max(0, repoMeta.open_issues_count - openPrs) : 0;
+      const latestCommit =
+        Array.isArray(commits) && commits[0]
+          ? {
+              at: commits[0].commit?.committer?.date || null,
+              message: commits[0].commit?.message || null,
+            }
+          : { at: null, message: null };
 
       // Delete old activity for this repo, then insert fresh snapshot
-      await supabase
-        .from("github_activity")
-        .delete()
-        .eq("github_repo_id", r.id);
+      await supabase.from("github_activity").delete().eq("github_repo_id", r.id);
 
-      const { error: insertError } = await supabase
-        .from("github_activity")
-        .insert({
-          github_repo_id: r.id,
-          user_id: userId,
-          open_prs: openPrs,
-          review_requested_prs: reviewRequested,
-          review_requested_pr_details: reviewRequestedPrDetails,
-          assigned_issues: assignedIssues,
-          assigned_issue_details: assignedIssueDetails,
-          total_issues: totalIssues,
-          latest_commit_at: latestCommit.at,
-          latest_commit_message: latestCommit.message,
-          synced_at: new Date().toISOString(),
-        });
+      const { error: insertError } = await supabase.from("github_activity").insert({
+        github_repo_id: r.id,
+        user_id: userId,
+        open_prs: openPrs,
+        review_requested_prs: reviewRequested,
+        review_requested_pr_details: reviewRequestedPrDetails,
+        assigned_issues: assignedIssues,
+        assigned_issue_details: assignedIssueDetails,
+        total_issues: totalIssues,
+        latest_commit_at: latestCommit.at,
+        latest_commit_message: latestCommit.message,
+        synced_at: new Date().toISOString(),
+      });
 
       if (insertError) {
         results.push({ repoId: r.id, error: insertError.message });
@@ -211,10 +205,10 @@ export default async (request) => {
     }
   }
 
-  return new Response(
-    JSON.stringify({ synced: results.filter((r) => !r.error).length, results }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
-  );
+  return new Response(JSON.stringify({ synced: results.filter((r) => !r.error).length, results }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 };
 
 export const config = {
