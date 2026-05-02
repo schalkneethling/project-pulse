@@ -94,6 +94,25 @@ export default async (request) => {
     return res.json();
   }
 
+  async function ghFetchAllPages(url) {
+    const results = [];
+    let page = 1;
+
+    while (true) {
+      const separator = url.includes("?") ? "&" : "?";
+      const pageData = await ghFetch(`${url}${separator}page=${page}`);
+
+      if (!Array.isArray(pageData) || pageData.length === 0) break;
+
+      results.push(...pageData);
+
+      if (pageData.length < 100) break;
+      page += 1;
+    }
+
+    return results;
+  }
+
   function mapGitHubItemDetails(items) {
     return items.map((item) => ({
       id: item.id,
@@ -117,8 +136,8 @@ export default async (request) => {
     try {
       // Fetch in parallel: open PRs, assigned issues, latest commit, repo metadata
       const [prs, issues, commits, repoMeta] = await Promise.all([
-        ghFetch(`${base}/pulls?state=open&per_page=100`),
-        ghFetch(`${base}/issues?assignee=${ghUsername}&state=open&per_page=100`),
+        ghFetchAllPages(`${base}/pulls?state=open&per_page=100`),
+        ghFetchAllPages(`${base}/issues?assignee=${ghUsername}&state=open&per_page=100`),
         ghFetch(`${base}/commits?per_page=1`),
         ghFetch(base), // GET /repos/{owner}/{repo} → open_issues_count
       ]);
