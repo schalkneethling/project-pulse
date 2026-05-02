@@ -9,6 +9,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
+dialog {
+  margin: auto;
+}
+
 dialog::backdrop {
   background: var(--backdrop-bg);
 }

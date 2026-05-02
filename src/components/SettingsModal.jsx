@@ -41,8 +41,8 @@ export function SettingsModal({ onClose, saveTokens }) {
     >
       <h2 className="text-lg font-semibold text-slate-200">Settings</h2>
       <p className="text-xs text-slate-400">
-        API tokens are stored securely and cannot be read back after saving.
-        Enter a new value to update.
+        API tokens are stored securely and cannot be read back after saving. Enter a new value to
+        update.
       </p>
       <div>
         <label htmlFor="settings-netlify-token" className={lc}>
@@ -57,9 +57,7 @@ export function SettingsModal({ onClose, saveTokens }) {
           className={ic}
           autoFocus
         />
-        <p className="text-xs text-slate-500 mt-1">
-          Used to auto-sync deploy status from Netlify.
-        </p>
+        <p className="text-xs text-slate-500 mt-1">Used to auto-sync deploy status from Netlify.</p>
       </div>
       <div>
         <label htmlFor="settings-github-token" className={lc}>

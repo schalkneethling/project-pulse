@@ -6,27 +6,30 @@ export function useTodos(userId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchTodos = useCallback(async (signal) => {
-    if (!userId) return;
+  const fetchTodos = useCallback(
+    async (signal) => {
+      if (!userId) return;
 
-    const { data, error: fetchError } = await supabase
-      .from("breadcrumbs")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .abortSignal(signal);
+      const { data, error: fetchError } = await supabase
+        .from("breadcrumbs")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .abortSignal(signal);
 
-    if (signal?.aborted) return;
+      if (signal?.aborted) return;
 
-    if (fetchError) {
-      setError(fetchError.message);
-      console.error("Fetch todos error:", fetchError);
-    } else {
-      setTodos((data || []).map(normalize));
-    }
+      if (fetchError) {
+        setError(fetchError.message);
+        console.error("Fetch todos error:", fetchError);
+      } else {
+        setTodos((data || []).map(normalize));
+      }
 
-    setLoading(false);
-  }, [userId]);
+      setLoading(false);
+    },
+    [userId],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -59,7 +62,7 @@ export function useTodos(userId) {
       setTodos((prev) => [created, ...prev]);
       return created;
     },
-    [userId]
+    [userId],
   );
 
   const updateTodo = useCallback(async (id, updates) => {
@@ -80,10 +83,7 @@ export function useTodos(userId) {
       }
     }
 
-    const { error } = await supabase
-      .from("breadcrumbs")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("breadcrumbs").update(payload).eq("id", id);
 
     if (error) {
       console.error("Update todo error:", error);
@@ -92,18 +92,13 @@ export function useTodos(userId) {
 
     setTodos((prev) =>
       prev.map((todo) =>
-        todo.id === id
-          ? { ...todo, ...updates, updatedAt: payload.updated_at }
-          : todo
-      )
+        todo.id === id ? { ...todo, ...updates, updatedAt: payload.updated_at } : todo,
+      ),
     );
   }, []);
 
   const deleteTodo = useCallback(async (id) => {
-    const { error } = await supabase
-      .from("breadcrumbs")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("breadcrumbs").delete().eq("id", id);
 
     if (error) {
       console.error("Delete todo error:", error);

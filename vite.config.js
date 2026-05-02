@@ -14,9 +14,7 @@ export default defineConfig({
       manifest: false,
       injectRegister: "auto",
       workbox: {
-        globPatterns: [
-          "**/*.{js,css,html,ico,png,svg,woff2,webmanifest}",
-        ],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
       },
     }),
   ],

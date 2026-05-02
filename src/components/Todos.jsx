@@ -37,7 +37,9 @@ export function TodoForm({ onCreate, projects }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="flex gap-2">
-        <label htmlFor="todo-note" className="sr-only">Todo</label>
+        <label htmlFor="todo-note" className="sr-only">
+          Todo
+        </label>
         <input
           id="todo-note"
           type="text"
@@ -60,7 +62,9 @@ export function TodoForm({ onCreate, projects }) {
         </summary>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
           <div>
-            <label htmlFor="todo-who" className="sr-only">Who is involved</label>
+            <label htmlFor="todo-who" className="sr-only">
+              Who is involved
+            </label>
             <input
               id="todo-who"
               type="text"
@@ -71,52 +75,68 @@ export function TodoForm({ onCreate, projects }) {
             />
           </div>
           <div>
-            <label htmlFor="todo-source" className="sr-only">Source</label>
+            <label htmlFor="todo-source" className="sr-only">
+              Source
+            </label>
             <input
               id="todo-source"
               type="text"
               value={form.source}
-              onChange={(e) => dispatch({ type: "SET_FIELD", field: "source", value: e.target.value })}
+              onChange={(e) =>
+                dispatch({ type: "SET_FIELD", field: "source", value: e.target.value })
+              }
               placeholder="Where? e.g. #backend, DM, Jira-123"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
           </div>
           <div>
-            <label htmlFor="todo-source-url" className="sr-only">Source link</label>
+            <label htmlFor="todo-source-url" className="sr-only">
+              Source link
+            </label>
             <input
               id="todo-source-url"
               type="url"
               value={form.sourceUrl}
-              onChange={(e) => dispatch({ type: "SET_FIELD", field: "sourceUrl", value: e.target.value })}
+              onChange={(e) =>
+                dispatch({ type: "SET_FIELD", field: "sourceUrl", value: e.target.value })
+              }
               placeholder="Link (optional)"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
           </div>
           <div>
-            <label htmlFor="todo-due-date" className="sr-only">Due date</label>
+            <label htmlFor="todo-due-date" className="sr-only">
+              Due date
+            </label>
             <input
               id="todo-due-date"
               type="date"
               value={form.dueDate}
-              onChange={(e) => dispatch({ type: "SET_FIELD", field: "dueDate", value: e.target.value })}
+              onChange={(e) =>
+                dispatch({ type: "SET_FIELD", field: "dueDate", value: e.target.value })
+              }
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
           </div>
           {projects?.length > 0 && (
             <div>
-              <label htmlFor="todo-project" className="sr-only">Linked project</label>
+              <label htmlFor="todo-project" className="sr-only">
+                Linked project
+              </label>
               <select
                 id="todo-project"
                 value={form.projectId}
-                onChange={(e) => dispatch({ type: "SET_FIELD", field: "projectId", value: e.target.value })}
+                onChange={(e) =>
+                  dispatch({ type: "SET_FIELD", field: "projectId", value: e.target.value })
+                }
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
               >
-              <option value="">No project</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name || "Untitled"}
-                </option>
-              ))}
+                <option value="">No project</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name || "Untitled"}
+                  </option>
+                ))}
               </select>
             </div>
           )}
@@ -150,7 +170,9 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
   const segments = linkify(note);
 
   return (
-    <div className={`bg-slate-800/50 border rounded-xl p-4 space-y-3 ${dueStyles[dueState] || "border-slate-700/50"}`}>
+    <div
+      className={`bg-slate-800/50 border rounded-xl p-4 space-y-3 ${dueStyles[dueState] || "border-slate-700/50"}`}
+    >
       <div className="flex items-start justify-between gap-3">
         <p className="min-w-0 flex-1 text-slate-200">
           {segments.map((seg, i) =>
@@ -167,7 +189,7 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
               </a>
             ) : (
               <span key={`text-${i}`}>{seg.value}</span>
-            )
+            ),
           )}
         </p>
         <span
@@ -198,7 +220,11 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
         )}
         {projectName && <span>Project: {projectName}</span>}
         {dueDate && (
-          <span className={dueState === "late" ? "text-red-300" : dueState === "today" ? "text-yellow-300" : ""}>
+          <span
+            className={
+              dueState === "late" ? "text-red-300" : dueState === "today" ? "text-yellow-300" : ""
+            }
+          >
             Due {formatDateKey(dueDate)}
           </span>
         )}
@@ -256,18 +282,13 @@ export function TodoList({ todos, onUpdate, onDelete, projects }) {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
 
-  const projectMap = Object.fromEntries(
-    (projects || []).map((p) => [p.id, p.name || "Untitled"])
-  );
+  const projectMap = Object.fromEntries((projects || []).map((p) => [p.id, p.name || "Untitled"]));
 
   const filtered = todos.filter((todo) => {
     if (activeTab !== "all" && todo.status !== activeTab) return false;
     if (search) {
       const q = search.toLowerCase();
-      const haystack = [todo.note, todo.who, todo.source]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      const haystack = [todo.note, todo.who, todo.source].filter(Boolean).join(" ").toLowerCase();
       if (!haystack.includes(q)) return false;
     }
     return true;
@@ -293,7 +314,9 @@ export function TodoList({ todos, onUpdate, onDelete, projects }) {
           ))}
         </div>
         <div className="flex-1">
-          <label htmlFor="todo-search" className="sr-only">Search todos</label>
+          <label htmlFor="todo-search" className="sr-only">
+            Search todos
+          </label>
           <input
             id="todo-search"
             type="text"
@@ -307,9 +330,7 @@ export function TodoList({ todos, onUpdate, onDelete, projects }) {
 
       <div className="space-y-3">
         {filtered.length === 0 ? (
-          <p className="text-center text-slate-500 py-8">
-            No todos found.
-          </p>
+          <p className="text-center text-slate-500 py-8">No todos found.</p>
         ) : (
           filtered.map((todo) => (
             <TodoCard
@@ -345,12 +366,9 @@ function toDateKey(date) {
 
 function formatDateKey(dateKey) {
   const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(
-    navigator?.languages?.[0] ?? "en-ZA",
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }
-  );
+  return new Date(year, month - 1, day).toLocaleDateString(navigator?.languages?.[0] ?? "en-ZA", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }

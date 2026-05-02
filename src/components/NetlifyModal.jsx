@@ -30,11 +30,9 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
       lastDeploy: {
         state: form.state,
         createdAt: new Date().toISOString(),
-        publishedAt:
-          form.state === "ready" ? new Date().toISOString() : null,
+        publishedAt: form.state === "ready" ? new Date().toISOString() : null,
         deployTime: form.deployTime ? parseInt(form.deployTime, 10) : null,
-        errorMessage:
-          form.state === "error" ? form.errorMessage.trim() : null,
+        errorMessage: form.state === "error" ? form.errorMessage.trim() : null,
         branch: form.branch.trim() || "main",
         commitMessage: form.commitMessage.trim() || null,
       },
@@ -52,12 +50,10 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
       onClose={onClose}
       className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4"
     >
-      <h2 className="text-lg font-semibold text-slate-200">
-        Link Netlify Site
-      </h2>
+      <h2 className="text-lg font-semibold text-slate-200">Link Netlify Site</h2>
       <p className="text-xs text-slate-400">
-        Link a Netlify site to track deploy status. Add your API token in
-        Settings to enable auto-sync.
+        Link a Netlify site to track deploy status. Add your API token in Settings to enable
+        auto-sync.
       </p>
       <div>
         <label htmlFor="netlify-site-name" className={lc}>
@@ -100,9 +96,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
         />
       </div>
       <div className="border-t border-slate-700 pt-4">
-        <h3 className="text-sm font-medium text-slate-300 mb-3">
-          Latest Deploy Status
-        </h3>
+        <h3 className="text-sm font-medium text-slate-300 mb-3">Latest Deploy Status</h3>
         <div className="space-y-3">
           <div>
             <label htmlFor="netlify-deploy-status" className={lc}>
@@ -128,9 +122,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
               id="netlify-deploy-branch"
               type="text"
               value={form.branch}
-              onChange={(e) =>
-                setForm({ ...form, branch: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, branch: e.target.value })}
               placeholder="main"
               className={ic}
             />
@@ -143,9 +135,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
               id="netlify-deploy-commit"
               type="text"
               value={form.commitMessage}
-              onChange={(e) =>
-                setForm({ ...form, commitMessage: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, commitMessage: e.target.value })}
               placeholder="fix: update header styles"
               className={ic}
             />
@@ -158,9 +148,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
               id="netlify-deploy-time"
               type="number"
               value={form.deployTime}
-              onChange={(e) =>
-                setForm({ ...form, deployTime: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, deployTime: e.target.value })}
               placeholder="120"
               className={ic}
             />
@@ -173,9 +161,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
               <textarea
                 id="netlify-deploy-error"
                 value={form.errorMessage}
-                onChange={(e) =>
-                  setForm({ ...form, errorMessage: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, errorMessage: e.target.value })}
                 placeholder="Build failed: ..."
                 rows={2}
                 className={ic + " resize-none"}

@@ -21,6 +21,7 @@ const queryBuilder = {
   single: vi.fn().mockResolvedValue({ data: null, error: null }),
   maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
   // Default: resolves to empty data
+  // eslint-disable-next-line unicorn/no-thenable -- intentional: mock must be awaitable
   then: vi.fn((resolve) => resolve({ data: [], error: null })),
 };
 
@@ -30,6 +31,7 @@ queryBuilder[Symbol.for("then")] = queryBuilder.then;
 // Override the default Promise resolution
 const makeThenable = (builder) => {
   // When the builder is awaited directly, resolve with { data: [], error: null }
+  // eslint-disable-next-line unicorn/no-thenable -- intentional: builder must be awaitable
   builder.then = (resolve) => resolve({ data: [], error: null });
   return builder;
 };

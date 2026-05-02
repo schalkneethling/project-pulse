@@ -70,7 +70,7 @@ export function useSettings(userId) {
       if (netlifyToken !== undefined) setHasNetlifyToken(!!netlifyToken);
       if (githubToken !== undefined) setHasGithubToken(!!githubToken);
     },
-    [userId]
+    [userId],
   );
 
   return { hasNetlifyToken, hasGithubToken, loading, saveTokens };

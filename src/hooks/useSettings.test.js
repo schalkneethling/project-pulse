@@ -34,7 +34,7 @@ describe("useSettings", () => {
       mockQuery({
         data: { user_id: "user-1", updated_at: "2026-01-01" },
         error: null,
-      })
+      }),
     );
 
     const { result } = renderHook(() => useSettings("user-1"));
@@ -48,9 +48,7 @@ describe("useSettings", () => {
   });
 
   it("reports no tokens when no settings row exists", async () => {
-    supabase.from.mockReturnValue(
-      mockQuery({ data: null, error: null })
-    );
+    supabase.from.mockReturnValue(mockQuery({ data: null, error: null }));
 
     const { result } = renderHook(() => useSettings("user-1"));
 
@@ -79,7 +77,7 @@ describe("useSettings", () => {
     expect(supabase.from).toHaveBeenCalledWith("user_settings");
     expect(builder.upsert).toHaveBeenCalledWith(
       { user_id: "user-1", netlify_api_token: "nf-token-123" },
-      { onConflict: "user_id" }
+      { onConflict: "user_id" },
     );
   });
 

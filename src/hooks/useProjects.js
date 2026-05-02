@@ -11,12 +11,13 @@ export function useProjects(userId) {
   const [error, setError] = useState(null);
 
   // ─── Fetch all projects with relations ───────────────────
-  const fetchProjects = useCallback(async (signal) => {
-    if (!userId) return;
+  const fetchProjects = useCallback(
+    async (signal) => {
+      if (!userId) return;
 
-    const { data, error: fetchError } = await supabase
-      .from("projects")
-      .select(`
+      const { data, error: fetchError } = await supabase
+        .from("projects")
+        .select(`
         *,
         tasks (*),
         netlify_sites (
@@ -28,24 +29,26 @@ export function useProjects(userId) {
           github_activity (*)
         )
       `)
-      .eq("user_id", userId)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false })
-      .abortSignal(signal);
+        .eq("user_id", userId)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false })
+        .abortSignal(signal);
 
-    if (signal?.aborted) return;
+      if (signal?.aborted) return;
 
-    if (fetchError) {
-      setError(fetchError.message);
-      console.error("Fetch projects error:", fetchError);
-    } else {
-      // Normalize the nested data into a flat-ish structure the UI expects
-      const normalized = (data || []).map(normalizeProject);
-      setProjects(normalized);
-    }
+      if (fetchError) {
+        setError(fetchError.message);
+        console.error("Fetch projects error:", fetchError);
+      } else {
+        // Normalize the nested data into a flat-ish structure the UI expects
+        const normalized = (data || []).map(normalizeProject);
+        setProjects(normalized);
+      }
 
-    setLoading(false);
-  }, [userId]);
+      setLoading(false);
+    },
+    [userId],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -74,7 +77,7 @@ export function useProjects(userId) {
   // ─── Update project fields ───────────────────────────────
   const updateProject = useCallback(async (id, updates) => {
     // Only send db-safe columns, strip out UI-only fields
-    const { tasks, netlify, ...dbFields } = updates;
+    const { tasks: _tasks, netlify: _netlify, ...dbFields } = updates;
     // Convert camelCase to snake_case for the relevant fields
     const payload = {};
     if ("name" in dbFields) payload.name = dbFields.name;
@@ -84,10 +87,7 @@ export function useProjects(userId) {
     if ("next_step" in dbFields) payload.next_step = dbFields.next_step;
     if ("sortOrder" in dbFields) payload.sort_order = dbFields.sortOrder;
 
-    const { error } = await supabase
-      .from("projects")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("projects").update(payload).eq("id", id);
 
     if (error) {
       console.error("Update project error:", error);
@@ -97,10 +97,8 @@ export function useProjects(userId) {
     // Optimistic update
     setProjects((prev) =>
       prev.map((p) =>
-        p.id === id
-          ? { ...p, ...dbFields, updatedAt: new Date().toISOString() }
-          : p
-      )
+        p.id === id ? { ...p, ...dbFields, updatedAt: new Date().toISOString() } : p,
+      ),
     );
   }, []);
 
@@ -146,8 +144,8 @@ export function useProjects(userId) {
                 ],
                 updatedAt: new Date().toISOString(),
               }
-            : p
-        )
+            : p,
+        ),
       );
 
       // Also touch the project's updated_at
@@ -156,15 +154,12 @@ export function useProjects(userId) {
         .update({ updated_at: new Date().toISOString() })
         .eq("id", projectId);
     },
-    [userId]
+    [userId],
   );
 
   // ─── Update task status ──────────────────────────────────
   const updateTask = useCallback(async (projectId, taskId, updates) => {
-    const { error } = await supabase
-      .from("tasks")
-      .update(updates)
-      .eq("id", taskId);
+    const { error } = await supabase.from("tasks").update(updates).eq("id", taskId);
 
     if (error) {
       console.error("Update task error:", error);
@@ -176,13 +171,11 @@ export function useProjects(userId) {
         p.id === projectId
           ? {
               ...p,
-              tasks: p.tasks.map((t) =>
-                t.id === taskId ? { ...t, ...updates } : t
-              ),
+              tasks: p.tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
               updatedAt: new Date().toISOString(),
             }
-          : p
-      )
+          : p,
+      ),
     );
 
     await supabase
@@ -208,8 +201,8 @@ export function useProjects(userId) {
               tasks: p.tasks.filter((t) => t.id !== taskId),
               updatedAt: new Date().toISOString(),
             }
-          : p
-      )
+          : p,
+      ),
     );
 
     await supabase
@@ -241,10 +234,7 @@ export function useProjects(userId) {
 
       if (existing) {
         siteId = existing.id;
-        await supabase
-          .from("netlify_sites")
-          .update(sitePayload)
-          .eq("id", siteId);
+        await supabase.from("netlify_sites").update(sitePayload).eq("id", siteId);
       } else {
         const { data: created } = await supabase
           .from("netlify_sites")
@@ -259,10 +249,7 @@ export function useProjects(userId) {
         const deploy = netlifyData.lastDeploy;
 
         // Delete old deploys for this site (we keep latest only for now)
-        await supabase
-          .from("netlify_deploys")
-          .delete()
-          .eq("netlify_site_id", siteId);
+        await supabase.from("netlify_deploys").delete().eq("netlify_site_id", siteId);
 
         await supabase.from("netlify_deploys").insert({
           netlify_site_id: siteId,
@@ -279,26 +266,16 @@ export function useProjects(userId) {
       // Re-fetch to get clean state
       await fetchProjects();
     },
-    [userId, fetchProjects]
+    [userId, fetchProjects],
   );
 
   // ─── Remove Netlify site link ────────────────────────────
-  const removeNetlifySite = useCallback(
-    async (projectId) => {
-      // Cascade will handle deploys
-      await supabase
-        .from("netlify_sites")
-        .delete()
-        .eq("project_id", projectId);
+  const removeNetlifySite = useCallback(async (projectId) => {
+    // Cascade will handle deploys
+    await supabase.from("netlify_sites").delete().eq("project_id", projectId);
 
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === projectId ? { ...p, netlify: null } : p
-        )
-      );
-    },
-    []
-  );
+    setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, netlify: null } : p)));
+  }, []);
 
   // ─── Save GitHub repo link ──────────────────────────────
   const saveGithubRepo = useCallback(
@@ -317,39 +294,28 @@ export function useProjects(userId) {
         .maybeSingle();
 
       if (existing) {
-        await supabase
-          .from("github_repos")
-          .update(payload)
-          .eq("id", existing.id);
+        await supabase.from("github_repos").update(payload).eq("id", existing.id);
       } else {
         await supabase.from("github_repos").insert(payload);
       }
 
       await fetchProjects();
     },
-    [userId, fetchProjects]
+    [userId, fetchProjects],
   );
 
   // ─── Remove GitHub repo link ────────────────────────────
-  const removeGithubRepo = useCallback(
-    async (projectId) => {
-      await supabase
-        .from("github_repos")
-        .delete()
-        .eq("project_id", projectId);
+  const removeGithubRepo = useCallback(async (projectId) => {
+    await supabase.from("github_repos").delete().eq("project_id", projectId);
 
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === projectId ? { ...p, github: null } : p
-        )
-      );
-    },
-    []
-  );
+    setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, github: null } : p)));
+  }, []);
 
   // ─── Sync Netlify deploys via serverless function ───────
   const syncNetlifyDeploys = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session?.access_token) return { error: "Not authenticated" };
 
     const res = await fetch("/.netlify/functions/sync-netlify-deploys", {
@@ -364,7 +330,9 @@ export function useProjects(userId) {
 
   // ─── Sync GitHub activity via serverless function ───────
   const syncGithubActivity = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session?.access_token) return { error: "Not authenticated" };
 
     const res = await fetch("/.netlify/functions/sync-github-activity", {
@@ -407,9 +375,7 @@ function normalizeProject(row) {
   }));
 
   let netlify = null;
-  const site = Array.isArray(row.netlify_sites)
-    ? row.netlify_sites[0]
-    : row.netlify_sites;
+  const site = Array.isArray(row.netlify_sites) ? row.netlify_sites[0] : row.netlify_sites;
 
   if (site) {
     const deploy = Array.isArray(site.netlify_deploys)
@@ -435,9 +401,7 @@ function normalizeProject(row) {
   }
 
   let github = null;
-  const ghRepo = Array.isArray(row.github_repos)
-    ? row.github_repos[0]
-    : row.github_repos;
+  const ghRepo = Array.isArray(row.github_repos) ? row.github_repos[0] : row.github_repos;
 
   if (ghRepo) {
     const activity = Array.isArray(ghRepo.github_activity)
