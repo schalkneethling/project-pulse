@@ -2,8 +2,13 @@
 
 :root {
   color-scheme: dark;
+  --backdrop-bg: rgba(0, 0, 0, 0.6);
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
+}
+
+dialog::backdrop {
+  background: var(--backdrop-bg);
 }
