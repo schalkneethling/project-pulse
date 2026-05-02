@@ -166,6 +166,22 @@ describe("TodoCard", () => {
     expect(link).toHaveAttribute("target", "_blank");
   });
 
+  it("truncates long URLs in notes", () => {
+    const longUrl =
+      "https://www.example.com/jobs/view/4409156985/?trk=eml-email_job_alert_digest_01-primary_job_list-0-jobcard_body_0_jobid_4409156985_ssid_4406051265_fmid_4cfg4a";
+    render(
+      <TodoCard
+        todo={{ ...baseTodo, note: `Apply for this role: ${longUrl}` }}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+
+    const link = screen.getByRole("link", { name: longUrl });
+    expect(link).toHaveClass("truncate");
+    expect(link).toHaveAttribute("title", longUrl);
+  });
+
   it("calls onUpdate with new status when status is changed", async () => {
     const onUpdate = vi.fn();
     const user = userEvent.setup();

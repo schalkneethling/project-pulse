@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useReducer } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
 import { useSettings } from "./hooks/useSettings";
@@ -6,6 +6,9 @@ import { useTodos } from "./hooks/useTodos";
 import { LoginScreen } from "./components/LoginScreen";
 import { TodoForm, TodoList, TodoCard } from "./components/Todos";
 import { daysSince, fmtDate, fmtDateTime, fmtDuration, timeAgo } from "./lib/helpers";
+import { NetlifyModal } from "./components/NetlifyModal";
+import { SettingsModal } from "./components/SettingsModal";
+import { GitHubModal } from "./components/GitHubModal";
 
 /* ─── constants ──────────────────────────────────────────── */
 const STATUS = {
@@ -120,131 +123,6 @@ function DeployCard({ netlify, onEdit, onRemove, onSync, syncing }) {
           {deploy?.createdAt && <span>{fmtDateTime(deploy.createdAt)}</span>}
         </div>
         {deploy?.errorMessage && <p className="text-xs text-red-400 bg-red-950/40 rounded-lg p-2 mt-1">{deploy.errorMessage}</p>}
-      </div>
-    </div>
-  );
-}
-
-/* ─── netlify modal ──────────────────────────────────────── */
-function NetlifyModal({ netlify, onSave, onClose }) {
-  const [form, setForm] = useState({
-    siteId: netlify?.siteId || "", siteName: netlify?.siteName || "", url: netlify?.url || "",
-    state: netlify?.lastDeploy?.state || "ready", branch: netlify?.lastDeploy?.branch || "main",
-    commitMessage: netlify?.lastDeploy?.commitMessage || "", deployTime: netlify?.lastDeploy?.deployTime || "",
-    errorMessage: netlify?.lastDeploy?.errorMessage || "",
-  });
-  const ic = "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
-  const lc = "block text-xs text-slate-400 uppercase tracking-wider mb-1";
-
-  const handleSave = () => {
-    if (!form.siteName.trim()) return;
-    onSave({
-      siteId: form.siteId.trim(), siteName: form.siteName.trim(), url: form.url.trim(),
-      lastDeploy: {
-        state: form.state, createdAt: new Date().toISOString(),
-        publishedAt: form.state === "ready" ? new Date().toISOString() : null,
-        deployTime: form.deployTime ? parseInt(form.deployTime, 10) : null,
-        errorMessage: form.state === "error" ? form.errorMessage.trim() : null,
-        branch: form.branch.trim() || "main", commitMessage: form.commitMessage.trim() || null,
-      },
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Link Netlify site">
-        <h2 className="text-lg font-semibold text-slate-200">Link Netlify Site</h2>
-        <p className="text-xs text-slate-400">Link a Netlify site to track deploy status. Add your API token in Settings to enable auto-sync.</p>
-        <div><label className={lc}>Site name</label><input type="text" value={form.siteName} onChange={(e) => setForm({ ...form, siteName: e.target.value })} placeholder="my-awesome-site" className={ic} /></div>
-        <div><label className={lc}>Site URL</label><input type="url" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://my-awesome-site.netlify.app" className={ic} /></div>
-        <div><label className={lc}>Netlify Site ID (for future API sync)</label><input type="text" value={form.siteId} onChange={(e) => setForm({ ...form, siteId: e.target.value })} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" className={ic} /></div>
-        <div className="border-t border-slate-700 pt-4">
-          <h3 className="text-sm font-medium text-slate-300 mb-3">Latest Deploy Status</h3>
-          <div className="space-y-3">
-            <div><label className={lc}>Status</label><select value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className={ic}><option value="ready">Published</option><option value="building">Building</option><option value="enqueued">Queued</option><option value="error">Failed</option></select></div>
-            <div><label className={lc}>Branch</label><input type="text" value={form.branch} onChange={(e) => setForm({ ...form, branch: e.target.value })} placeholder="main" className={ic} /></div>
-            <div><label className={lc}>Last commit message</label><input type="text" value={form.commitMessage} onChange={(e) => setForm({ ...form, commitMessage: e.target.value })} placeholder="fix: update header styles" className={ic} /></div>
-            <div><label className={lc}>Build time (seconds)</label><input type="number" value={form.deployTime} onChange={(e) => setForm({ ...form, deployTime: e.target.value })} placeholder="120" className={ic} /></div>
-            {form.state === "error" && <div><label className={lc}>Error message</label><textarea value={form.errorMessage} onChange={(e) => setForm({ ...form, errorMessage: e.target.value })} placeholder="Build failed: ..." rows={2} className={ic + " resize-none"} /></div>}
-          </div>
-        </div>
-        <div className="flex gap-2 pt-2">
-          <button onClick={handleSave} disabled={!form.siteName.trim()} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors">Save</button>
-          <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors">Cancel</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── settings modal ────────────────────────────────────── */
-function SettingsModal({ onClose, saveTokens }) {
-  const [netlifyToken, setNetlifyToken] = useState("");
-  const [githubToken, setGithubToken] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const ic = "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
-  const lc = "block text-xs text-slate-400 uppercase tracking-wider mb-1";
-
-  const handleSave = async () => {
-    setSaving(true);
-    const updates = {};
-    if (netlifyToken) updates.netlifyToken = netlifyToken;
-    if (githubToken) updates.githubToken = githubToken;
-    await saveTokens(updates);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Settings">
-        <h2 className="text-lg font-semibold text-slate-200">Settings</h2>
-        <p className="text-xs text-slate-400">API tokens are stored securely and cannot be read back after saving. Enter a new value to update.</p>
-        <div>
-          <label className={lc}>Netlify Personal Access Token</label>
-          <input type="password" value={netlifyToken} onChange={(e) => setNetlifyToken(e.target.value)} placeholder="Enter token to save or update" className={ic} />
-          <p className="text-xs text-slate-500 mt-1">Used to auto-sync deploy status from Netlify.</p>
-        </div>
-        <div>
-          <label className={lc}>GitHub Personal Access Token</label>
-          <input type="password" value={githubToken} onChange={(e) => setGithubToken(e.target.value)} placeholder="Enter token to save or update" className={ic} />
-          <p className="text-xs text-slate-500 mt-1">Used to sync PRs, issues, and commit activity from GitHub.</p>
-        </div>
-        <div className="flex gap-2 pt-2">
-          <button onClick={handleSave} disabled={saving || (!netlifyToken && !githubToken)} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors">
-            {saving ? "Saving…" : saved ? "Saved" : "Save"}
-          </button>
-          <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors">Close</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── github repo modal ─────────────────────────────────── */
-function GitHubModal({ github, onSave, onClose }) {
-  const [owner, setOwner] = useState(github?.owner || "");
-  const [repo, setRepo] = useState(github?.repo || "");
-  const ic = "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
-  const lc = "block text-xs text-slate-400 uppercase tracking-wider mb-1";
-
-  const handleSave = () => {
-    if (!owner.trim() || !repo.trim()) return;
-    onSave({ owner: owner.trim(), repo: repo.trim() });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Link GitHub repository">
-        <h2 className="text-lg font-semibold text-slate-200">Link GitHub Repo</h2>
-        <div><label className={lc}>Owner / Organization</label><input type="text" value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="e.g. schalkneethling" className={ic} /></div>
-        <div><label className={lc}>Repository</label><input type="text" value={repo} onChange={(e) => setRepo(e.target.value)} placeholder="e.g. project-pulse" className={ic} /></div>
-        <div className="flex gap-2 pt-2">
-          <button onClick={handleSave} disabled={!owner.trim() || !repo.trim()} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors">Save</button>
-          <button onClick={onClose} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors">Cancel</button>
-        </div>
       </div>
     </div>
   );
@@ -440,26 +318,52 @@ function Editable({ field, label, value, multi, editing, tempValue, onTempChange
 }
 
 /* ─── project detail ─────────────────────────────────────── */
+
+const detailInitial = {
+  editingField: null,
+  tempValue: "",
+  newTask: "",
+  showDelete: false,
+  showNetlify: false,
+  showGithub: false,
+  syncingNetlify: false,
+  syncingGithub: false,
+};
+
+function detailReducer(state, action) {
+  switch (action.type) {
+    case "START_EDIT":
+      return { ...state, editingField: action.field, tempValue: action.value };
+    case "SET_TEMP":
+      return { ...state, tempValue: action.value };
+    case "STOP_EDIT":
+      return { ...state, editingField: null };
+    case "SET_NEW_TASK":
+      return { ...state, newTask: action.value };
+    case "CLEAR_NEW_TASK":
+      return { ...state, newTask: "" };
+    case "SET_SHOW":
+      return { ...state, [action.key]: action.value };
+    case "SET_SYNCING":
+      return { ...state, [action.key]: action.value };
+    default:
+      return state;
+  }
+}
+
 function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack }) {
-  const [editingField, setEditingField] = useState(null);
-  const [tempValue, setTempValue] = useState("");
-  const [newTask, setNewTask] = useState("");
-  const [showDelete, setShowDelete] = useState(false);
-  const [showNetlify, setShowNetlify] = useState(false);
-  const [showGithub, setShowGithub] = useState(false);
-  const [syncingNetlify, setSyncingNetlify] = useState(false);
-  const [syncingGithub, setSyncingGithub] = useState(false);
+  const [d, dispatch] = useReducer(detailReducer, detailInitial);
   const ref = useRef(null);
 
-  useEffect(() => { if (editingField && ref.current) ref.current.focus(); }, [editingField]);
+  useEffect(() => { if (d.editingField && ref.current) ref.current.focus(); }, [d.editingField]);
 
-  const startEdit = (f, v) => { setEditingField(f); setTempValue(v || ""); };
-  const commitEdit = (f) => { actions.updateProject(project.id, { [f]: tempValue }); setEditingField(null); };
-  const onKey = (e, f) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitEdit(f); } if (e.key === "Escape") setEditingField(null); };
+  const startEdit = (f, v) => { dispatch({ type: "START_EDIT", field: f, value: v || "" }); };
+  const commitEdit = (f) => { actions.updateProject(project.id, { [f]: d.tempValue }); dispatch({ type: "STOP_EDIT" }); };
+  const onKey = (e, f) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitEdit(f); } if (e.key === "Escape") dispatch({ type: "STOP_EDIT" }); };
 
-  const handleAddTask = () => { if (!newTask.trim()) return; actions.addTask(project.id, newTask.trim()); setNewTask(""); };
-  const handleSyncNetlify = async () => { setSyncingNetlify(true); await actions.syncNetlifyDeploys(); setSyncingNetlify(false); };
-  const handleSyncGithub = async () => { setSyncingGithub(true); await actions.syncGithubActivity(); setSyncingGithub(false); };
+  const handleAddTask = () => { if (!d.newTask.trim()) return; actions.addTask(project.id, d.newTask.trim()); dispatch({ type: "CLEAR_NEW_TASK" }); };
+  const handleSyncNetlify = async () => { dispatch({ type: "SET_SYNCING", key: "syncingNetlify", value: true }); await actions.syncNetlifyDeploys(); dispatch({ type: "SET_SYNCING", key: "syncingNetlify", value: false }); };
+  const handleSyncGithub = async () => { dispatch({ type: "SET_SYNCING", key: "syncingGithub", value: true }); await actions.syncGithubActivity(); dispatch({ type: "SET_SYNCING", key: "syncingGithub", value: false }); };
 
   const groups = { in_progress: project.tasks.filter((t) => t.status === "in_progress"), todo: project.tasks.filter((t) => t.status === "todo"), blocked: project.tasks.filter((t) => t.status === "blocked"), done: project.tasks.filter((t) => t.status === "done") };
   const gc = { in_progress: "border-blue-900/30", todo: "border-slate-700/50", blocked: "border-red-900/30", done: "border-slate-700/30" };
@@ -469,35 +373,35 @@ function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack })
       <div className="flex items-center gap-3">
         <button onClick={onBack} className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-200" aria-label="Back to overview"><IconBack /></button>
         <div className="flex-1 min-w-0">
-          {editingField === "name" ? <input ref={ref} type="text" value={tempValue} onChange={(e) => setTempValue(e.target.value)} onKeyDown={(e) => onKey(e, "name")} onBlur={() => commitEdit("name")} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-1 text-xl font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          {d.editingField === "name" ? <input ref={ref} type="text" value={d.tempValue} onChange={(e) => dispatch({ type: "SET_TEMP", value: e.target.value })} onKeyDown={(e) => onKey(e, "name")} onBlur={() => commitEdit("name")} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-1 text-xl font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
             : <button onClick={() => startEdit("name", project.name)} className="text-left group flex items-center gap-2"><h2 className="text-xl font-bold text-slate-200 truncate">{project.name || "Untitled Project"}</h2><span className="opacity-0 group-hover:opacity-100 text-slate-500 transition-opacity"><IconEdit size={14} /></span></button>}
         </div>
       </div>
 
       <div className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-5 space-y-4">
         <div>
-          <label className="block text-xs text-slate-400 uppercase tracking-wider mb-2">Status</label>
+          <span className="block text-xs text-slate-400 uppercase tracking-wider mb-2">Status</span>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Project status">
             {Object.entries(STATUS).map(([k, v]) => <button key={k} onClick={() => actions.updateProject(project.id, { status: k })} role="radio" aria-checked={project.status === k} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${project.status === k ? `${v.color} text-white` : "bg-slate-700/50 text-slate-400 hover:bg-slate-700"}`}>{v.label}</button>)}
           </div>
         </div>
-        <Editable field="description" label="Description" value={project.description} multi editing={editingField === "description"} tempValue={tempValue} onTempChange={setTempValue} onStartEdit={startEdit} onCommit={commitEdit} onKeyDown={onKey} inputRef={ref} />
+        <Editable field="description" label="Description" value={project.description} multi editing={d.editingField === "description"} tempValue={d.tempValue} onTempChange={(v) => dispatch({ type: "SET_TEMP", value: v })} onStartEdit={startEdit} onCommit={commitEdit} onKeyDown={onKey} inputRef={ref} />
         <div className="rounded-lg bg-slate-900/50 border border-blue-900/30 p-4">
-          <Editable field="nextStep" label="⚡ Next Step" value={project.nextStep} editing={editingField === "nextStep"} tempValue={tempValue} onTempChange={setTempValue} onStartEdit={startEdit} onCommit={commitEdit} onKeyDown={onKey} inputRef={ref} />
+          <Editable field="nextStep" label="⚡ Next Step" value={project.nextStep} editing={d.editingField === "nextStep"} tempValue={d.tempValue} onTempChange={(v) => dispatch({ type: "SET_TEMP", value: v })} onStartEdit={startEdit} onCommit={commitEdit} onKeyDown={onKey} inputRef={ref} />
           <p className="text-xs text-slate-500 mt-1 px-3">What should you do when you next sit down with this project?</p>
         </div>
         <div className="flex gap-4 text-xs text-slate-500 px-3"><span>Created {fmtDate(project.createdAt)}</span><span>Updated {fmtDate(project.updatedAt)}</span></div>
       </div>
 
-      <DeployCard netlify={project.netlify} onEdit={() => setShowNetlify(true)} onRemove={() => actions.removeNetlifySite(project.id)} onSync={handleSyncNetlify} syncing={syncingNetlify} />
+      <DeployCard netlify={project.netlify} onEdit={() => dispatch({ type: "SET_SHOW", key: "showNetlify", value: true })} onRemove={() => actions.removeNetlifySite(project.id)} onSync={handleSyncNetlify} syncing={d.syncingNetlify} />
 
-      <GitHubCard github={project.github} onEdit={() => setShowGithub(true)} onRemove={() => actions.removeGithubRepo(project.id)} onSync={handleSyncGithub} syncing={syncingGithub} />
+      <GitHubCard github={project.github} onEdit={() => dispatch({ type: "SET_SHOW", key: "showGithub", value: true })} onRemove={() => actions.removeGithubRepo(project.id)} onSync={handleSyncGithub} syncing={d.syncingGithub} />
 
       <section>
         <h3 className="text-lg font-semibold text-slate-200 mb-4">Tasks</h3>
         <div className="flex gap-2 mb-4">
-          <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAddTask(); }} placeholder="Add a task…" className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <button onClick={handleAddTask} disabled={!newTask.trim()} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors"><IconPlus size={18} /></button>
+          <input type="text" value={d.newTask} onChange={(e) => dispatch({ type: "SET_NEW_TASK", value: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") handleAddTask(); }} placeholder="Add a task…" className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button onClick={handleAddTask} disabled={!d.newTask.trim()} className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors"><IconPlus size={18} /></button>
         </div>
         {Object.entries(groups).map(([s, tasks]) => {
           if (!tasks.length) return null;
@@ -518,12 +422,12 @@ function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack })
       )}
 
       <div className="border-t border-slate-800 pt-6">
-        {showDelete ? <div className="flex items-center gap-3 bg-red-950/30 border border-red-900/40 rounded-lg p-4"><p className="text-sm text-red-300 flex-1">Permanently delete "{project.name || "this project"}"?</p><button onClick={() => { actions.deleteProject(project.id); onBack(); }} className="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-medium text-white transition-colors">Delete</button><button onClick={() => setShowDelete(false)} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors">Cancel</button></div>
-          : <button onClick={() => setShowDelete(true)} className="text-sm text-slate-500 hover:text-red-400 transition-colors">Delete project</button>}
+        {d.showDelete ? <div className="flex items-center gap-3 bg-red-950/30 border border-red-900/40 rounded-lg p-4"><p className="text-sm text-red-300 flex-1">Permanently delete "{project.name || "this project"}"?</p><button onClick={() => { actions.deleteProject(project.id); onBack(); }} className="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-medium text-white transition-colors">Delete</button><button onClick={() => dispatch({ type: "SET_SHOW", key: "showDelete", value: false })} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors">Cancel</button></div>
+          : <button onClick={() => dispatch({ type: "SET_SHOW", key: "showDelete", value: true })} className="text-sm text-slate-500 hover:text-red-400 transition-colors">Delete project</button>}
       </div>
 
-      {showNetlify && <NetlifyModal netlify={project.netlify} onSave={(data) => { actions.saveNetlifySite(project.id, data); setShowNetlify(false); }} onClose={() => setShowNetlify(false)} />}
-      {showGithub && <GitHubModal github={project.github} onSave={(data) => { actions.saveGithubRepo(project.id, data); setShowGithub(false); }} onClose={() => setShowGithub(false)} />}
+      {d.showNetlify && <NetlifyModal netlify={project.netlify} onSave={(data) => { actions.saveNetlifySite(project.id, data); dispatch({ type: "SET_SHOW", key: "showNetlify", value: false }); }} onClose={() => dispatch({ type: "SET_SHOW", key: "showNetlify", value: false })} />}
+      {d.showGithub && <GitHubModal github={project.github} onSave={(data) => { actions.saveGithubRepo(project.id, data); dispatch({ type: "SET_SHOW", key: "showGithub", value: false }); }} onClose={() => dispatch({ type: "SET_SHOW", key: "showGithub", value: false })} />}
     </div>
   );
 }
@@ -545,12 +449,12 @@ export default function App() {
   } = useTodos(user?.id);
 
   const [view, setView] = useState("overview");
-  const [selectedId, setSelectedId] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const selectedIdRef = useRef(null);
 
-  const select = (id) => { setSelectedId(id); setView("detail"); };
-  const selected = projects.find((p) => p.id === selectedId);
-  const handleNew = async () => { const p = await createProject(); if (p) { setSelectedId(p.id); setView("detail"); } };
+  const select = (id) => { selectedIdRef.current = id; setView("detail"); };
+  const selected = projects.find((p) => p.id === selectedIdRef.current);
+  const handleNew = async () => { const p = await createProject(); if (p) { selectedIdRef.current = p.id; setView("detail"); } };
 
   if (authLoading) {
     return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><div className="animate-pulse text-slate-400">Loading…</div></div>;

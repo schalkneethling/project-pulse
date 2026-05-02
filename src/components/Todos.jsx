@@ -1,34 +1,37 @@
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { linkify } from "../lib/linkify";
 import { timeAgo } from "../lib/helpers";
 
+const formInitial = { note: "", who: "", source: "", sourceUrl: "", projectId: "", dueDate: "" };
+
+function formReducer(state, action) {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value };
+    case "RESET":
+      return formInitial;
+    default:
+      return state;
+  }
+}
+
 export function TodoForm({ onCreate, projects }) {
-  const [note, setNote] = useState("");
-  const [who, setWho] = useState("");
-  const [source, setSource] = useState("");
-  const [sourceUrl, setSourceUrl] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [form, dispatch] = useReducer(formReducer, formInitial);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!note.trim()) return;
+    if (!form.note.trim()) return;
 
     onCreate({
-      note: note.trim(),
-      who: who.trim() || undefined,
-      source: source.trim() || undefined,
-      sourceUrl: sourceUrl.trim() || undefined,
-      projectId: projectId || undefined,
-      dueDate: dueDate || undefined,
+      note: form.note.trim(),
+      who: form.who.trim() || undefined,
+      source: form.source.trim() || undefined,
+      sourceUrl: form.sourceUrl.trim() || undefined,
+      projectId: form.projectId || undefined,
+      dueDate: form.dueDate || undefined,
     });
 
-    setNote("");
-    setWho("");
-    setSource("");
-    setSourceUrl("");
-    setProjectId("");
-    setDueDate("");
+    dispatch({ type: "RESET" });
   };
 
   return (
@@ -38,8 +41,8 @@ export function TodoForm({ onCreate, projects }) {
         <input
           id="todo-note"
           type="text"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
+          value={form.note}
+          onChange={(e) => dispatch({ type: "SET_FIELD", field: "note", value: e.target.value })}
           placeholder="Add a todo..."
           className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
         />
@@ -61,8 +64,8 @@ export function TodoForm({ onCreate, projects }) {
             <input
               id="todo-who"
               type="text"
-              value={who}
-              onChange={(e) => setWho(e.target.value)}
+              value={form.who}
+              onChange={(e) => dispatch({ type: "SET_FIELD", field: "who", value: e.target.value })}
               placeholder="Who is involved? e.g. @alice, @bob"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
@@ -72,8 +75,8 @@ export function TodoForm({ onCreate, projects }) {
             <input
               id="todo-source"
               type="text"
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
+              value={form.source}
+              onChange={(e) => dispatch({ type: "SET_FIELD", field: "source", value: e.target.value })}
               placeholder="Where? e.g. #backend, DM, Jira-123"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
@@ -83,8 +86,8 @@ export function TodoForm({ onCreate, projects }) {
             <input
               id="todo-source-url"
               type="url"
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
+              value={form.sourceUrl}
+              onChange={(e) => dispatch({ type: "SET_FIELD", field: "sourceUrl", value: e.target.value })}
               placeholder="Link (optional)"
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
@@ -94,8 +97,8 @@ export function TodoForm({ onCreate, projects }) {
             <input
               id="todo-due-date"
               type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              value={form.dueDate}
+              onChange={(e) => dispatch({ type: "SET_FIELD", field: "dueDate", value: e.target.value })}
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
           </div>
@@ -104,8 +107,8 @@ export function TodoForm({ onCreate, projects }) {
               <label htmlFor="todo-project" className="sr-only">Linked project</label>
               <select
                 id="todo-project"
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
+                value={form.projectId}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "projectId", value: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
               >
               <option value="">No project</option>
@@ -125,6 +128,8 @@ export function TodoForm({ onCreate, projects }) {
 
 export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
   const { id, note, who, source, sourceUrl, status, dueDate, createdAt } = todo;
+  const linkClassName =
+    "inline-block max-w-[min(100%,72ch)] truncate align-bottom text-sky-400 hover:text-sky-300 underline underline-offset-2";
 
   const statusStyles = {
     open: "bg-sky-500/20 text-sky-300",
@@ -147,20 +152,21 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
   return (
     <div className={`bg-slate-800/50 border rounded-xl p-4 space-y-3 ${dueStyles[dueState] || "border-slate-700/50"}`}>
       <div className="flex items-start justify-between gap-3">
-        <p className="text-slate-200 flex-1">
+        <p className="min-w-0 flex-1 text-slate-200">
           {segments.map((seg, i) =>
             seg.type === "link" ? (
               <a
-                key={i}
+                key={`${seg.type}-${i}`}
                 href={seg.value}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sky-400 hover:text-sky-300 underline underline-offset-2"
+                title={seg.value}
+                className={linkClassName}
               >
                 {seg.value}
               </a>
             ) : (
-              <span key={i}>{seg.value}</span>
+              <span key={`text-${i}`}>{seg.value}</span>
             )
           )}
         </p>
@@ -181,7 +187,7 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
                 href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sky-400 hover:text-sky-300 underline underline-offset-2"
+                className={linkClassName}
               >
                 {source}
               </a>
