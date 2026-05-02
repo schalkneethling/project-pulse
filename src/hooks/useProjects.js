@@ -451,7 +451,13 @@ function normalizeProject(row) {
         ? {
             openPrs: activity.open_prs,
             reviewRequestedPrs: activity.review_requested_prs,
+            reviewRequestedPrDetails: Array.isArray(activity.review_requested_pr_details)
+              ? activity.review_requested_pr_details
+              : [],
             assignedIssues: activity.assigned_issues,
+            assignedIssueDetails: Array.isArray(activity.assigned_issue_details)
+              ? activity.assigned_issue_details
+              : [],
             totalIssues: activity.total_issues ?? 0,
             latestCommitAt: activity.latest_commit_at,
             latestCommitMessage: activity.latest_commit_message,

@@ -94,6 +94,35 @@ export default async (request) => {
     return res.json();
   }
 
+  async function ghFetchAllPages(url) {
+    const results = [];
+    let page = 1;
+
+    while (true) {
+      const separator = url.includes("?") ? "&" : "?";
+      const pageData = await ghFetch(`${url}${separator}page=${page}`);
+
+      if (!Array.isArray(pageData) || pageData.length === 0) break;
+
+      results.push(...pageData);
+
+      if (pageData.length < 100) break;
+      page += 1;
+    }
+
+    return results;
+  }
+
+  function mapGitHubItemDetails(items) {
+    return items.map((item) => ({
+      id: item.id,
+      number: item.number,
+      title: item.title,
+      openedAt: item.created_at,
+      url: item.html_url,
+    }));
+  }
+
   // ── Get the authenticated GitHub username for filtering ───
   const ghUser = await ghFetch("https://api.github.com/user");
   const ghUsername = ghUser?.login || "";
@@ -107,8 +136,8 @@ export default async (request) => {
     try {
       // Fetch in parallel: open PRs, assigned issues, latest commit, repo metadata
       const [prs, issues, commits, repoMeta] = await Promise.all([
-        ghFetch(`${base}/pulls?state=open&per_page=100`),
-        ghFetch(`${base}/issues?assignee=${ghUsername}&state=open&per_page=100`),
+        ghFetchAllPages(`${base}/pulls?state=open&per_page=100`),
+        ghFetchAllPages(`${base}/issues?assignee=${ghUsername}&state=open&per_page=100`),
         ghFetch(`${base}/commits?per_page=1`),
         ghFetch(base), // GET /repos/{owner}/{repo} → open_issues_count
       ]);
@@ -119,7 +148,17 @@ export default async (request) => {
             pr.requested_reviewers?.some((rev) => rev.login === ghUsername)
           ).length
         : 0;
-      const assignedIssues = Array.isArray(issues) ? issues.length : 0;
+      const reviewRequestedPrDetails = Array.isArray(prs)
+        ? mapGitHubItemDetails(
+            prs.filter((pr) =>
+              pr.requested_reviewers?.some((rev) => rev.login === ghUsername)
+            )
+          )
+        : [];
+      const assignedIssueDetails = Array.isArray(issues)
+        ? mapGitHubItemDetails(issues.filter((issue) => !issue.pull_request))
+        : [];
+      const assignedIssues = assignedIssueDetails.length;
       // GitHub's open_issues_count includes PRs, so subtract to get issues-only.
       // Use != null so a legitimate 0 isn't treated as missing.
       const totalIssues = repoMeta?.open_issues_count != null
@@ -145,7 +184,9 @@ export default async (request) => {
           user_id: userId,
           open_prs: openPrs,
           review_requested_prs: reviewRequested,
+          review_requested_pr_details: reviewRequestedPrDetails,
           assigned_issues: assignedIssues,
+          assigned_issue_details: assignedIssueDetails,
           total_issues: totalIssues,
           latest_commit_at: latestCommit.at,
           latest_commit_message: latestCommit.message,
