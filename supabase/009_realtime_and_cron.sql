@@ -10,8 +10,9 @@
 --      the frontend can distinguish "Netlify saved" from "GitHub saved"
 --      without ever reading the (RLS-protected) token values.
 --   4. Schedule a pg_cron job that calls the `sync-all` Netlify Function
---      every 5 minutes via pg_net, pre-warming data before the user opens
---      the dashboard.
+--      every 30 minutes via pg_net, pre-warming data before the user opens
+--      the dashboard. The on-demand refresh buttons still hit the per-user
+--      sync endpoints for finer-grained updates.
 
 -- ─── 1. Realtime publication ─────────────────────────────────────────
 -- Safe to re-run: the DO block swallows the "already in publication" error.
@@ -85,7 +86,7 @@ grant select (has_netlify_token, has_github_token)
 --
 --   select cron.schedule(
 --     'sync-all-activity',
---     '*/5 * * * *',
+--     '*/30 * * * *',
 --     $$
 --       select net.http_post(
 --         url := 'https://YOUR-SITE.netlify.app/.netlify/functions/sync-all',
