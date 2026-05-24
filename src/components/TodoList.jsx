@@ -37,6 +37,7 @@ export function TodoList({ todos, onUpdate, onDelete, projects }) {
               type="button"
               key={tab}
               onClick={() => setActiveTab(tab)}
+              aria-pressed={activeTab === tab}
               className={`px-3 py-1.5 text-sm rounded-md capitalize transition-colors ${
                 activeTab === tab
                   ? "bg-slate-700 text-slate-100"

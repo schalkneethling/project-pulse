@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 
 const formInitial = { note: "", who: "", source: "", sourceUrl: "", projectId: "", dueDate: "" };
 
@@ -15,23 +15,34 @@ function formReducer(state, action) {
 
 export function TodoForm({ onCreate, projects }) {
   const [form, dispatch] = useReducer(formReducer, formInitial);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.note.trim()) {
+    if (!form.note.trim() || submitting) {
       return;
     }
 
-    onCreate({
-      note: form.note.trim(),
-      who: form.who.trim() || undefined,
-      source: form.source.trim() || undefined,
-      sourceUrl: form.sourceUrl.trim() || undefined,
-      projectId: form.projectId || undefined,
-      dueDate: form.dueDate || undefined,
-    });
-
-    dispatch({ type: "RESET" });
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await onCreate({
+        note: form.note.trim(),
+        who: form.who.trim() || undefined,
+        source: form.source.trim() || undefined,
+        sourceUrl: form.sourceUrl.trim() || undefined,
+        projectId: form.projectId || undefined,
+        dueDate: form.dueDate || undefined,
+      });
+      // Only reset on success — a failed save would otherwise discard the
+      // user's input and force them to retype it.
+      dispatch({ type: "RESET" });
+    } catch (err) {
+      setSubmitError(err?.message || "Could not save todo. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -51,11 +62,17 @@ export function TodoForm({ onCreate, projects }) {
         />
         <button
           type="submit"
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors cursor-pointer"
+          disabled={submitting || !form.note.trim()}
+          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-medium rounded-lg transition-colors cursor-pointer"
         >
-          Save
+          {submitting ? "Saving…" : "Save"}
         </button>
       </div>
+      {submitError && (
+        <p role="alert" className="text-sm text-red-400">
+          {submitError}
+        </p>
+      )}
 
       <details className="group">
         <summary className="text-sm text-slate-400 hover:text-slate-300 transition-colors cursor-pointer list-none">

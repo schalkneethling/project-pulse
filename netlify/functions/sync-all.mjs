@@ -7,6 +7,13 @@
 
 import { createClient } from "@supabase/supabase-js";
 
+// Per-request timeout for outbound calls to Netlify/GitHub. The whole
+// sync-all invocation runs from a pg_cron tick every 5 minutes; if any
+// single fetch hangs, we abort it so a slow upstream can't stall the
+// rest of the batch. Timed-out fetches are reported as retriable and
+// will be retried on the next cron tick.
+const FETCH_TIMEOUT_MS = 15_000;
+
 /**
  * Netlify Function: sync-all
  *
@@ -105,7 +112,10 @@ async function syncNetlifyForUser(supabase, userId, netlifyToken) {
     try {
       const res = await fetch(
         `https://api.netlify.com/api/v1/sites/${site.netlify_site_id}/deploys?per_page=1`,
-        { headers: { Authorization: `Bearer ${netlifyToken}` } },
+        {
+          headers: { Authorization: `Bearer ${netlifyToken}` },
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        },
       );
 
       if (!res.ok) {
@@ -128,25 +138,36 @@ async function syncNetlifyForUser(supabase, userId, netlifyToken) {
         state = "enqueued";
       }
 
-      await supabase.from("netlify_deploys").delete().eq("netlify_site_id", site.id);
-      const { error: insertError } = await supabase.from("netlify_deploys").insert({
-        netlify_site_id: site.id,
-        user_id: userId,
-        state,
-        branch: d.branch || "main",
-        commit_message: d.title || d.commit_message || null,
-        deploy_time: d.deploy_time || null,
-        error_message: d.error_message || null,
-        published_at: d.published_at || null,
-      });
+      // Atomic replace — the unique constraint on netlify_site_id (added
+      // in migration 009) makes this an in-place update when a row
+      // already exists, with no delete-then-insert race window.
+      const { error: upsertError } = await supabase
+        .from("netlify_deploys")
+        .upsert(
+          {
+            netlify_site_id: site.id,
+            user_id: userId,
+            state,
+            branch: d.branch || "main",
+            commit_message: d.title || d.commit_message || null,
+            deploy_time: d.deploy_time || null,
+            error_message: d.error_message || null,
+            published_at: d.published_at || null,
+          },
+          { onConflict: "netlify_site_id" },
+        );
 
-      if (insertError) {
-        errors.push(`netlify ${site.id}: ${insertError.message}`);
+      if (upsertError) {
+        errors.push(`netlify ${site.id}: ${upsertError.message}`);
       } else {
         synced += 1;
       }
     } catch (err) {
-      errors.push(`netlify ${site.id}: ${err.message}`);
+      // AbortSignal.timeout fires a TimeoutError (name === "TimeoutError"),
+      // a subclass of DOMException. Treat both timeout and explicit abort
+      // as retriable — the next pg_cron tick will try again.
+      const retriable = err?.name === "TimeoutError" || err?.name === "AbortError";
+      errors.push(`netlify ${site.id}: ${retriable ? "timeout (retriable)" : err.message}`);
     }
   }
 
@@ -177,7 +198,10 @@ async function syncGithubForUser(supabase, userId, githubToken) {
   };
 
   async function ghFetch(url) {
-    const res = await fetch(url, { headers: ghHeaders });
+    const res = await fetch(url, {
+      headers: ghHeaders,
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
     if (!res.ok) {
       return null;
     }
@@ -250,28 +274,35 @@ async function syncGithubForUser(supabase, userId, githubToken) {
             }
           : { at: null, message: null };
 
-      await supabase.from("github_activity").delete().eq("github_repo_id", repo.id);
-      const { error: insertError } = await supabase.from("github_activity").insert({
-        github_repo_id: repo.id,
-        user_id: userId,
-        open_prs: openPrs,
-        review_requested_prs: reviewRequestedPrs.length,
-        review_requested_pr_details: reviewRequestedPrDetails,
-        assigned_issues: assignedIssueDetails.length,
-        assigned_issue_details: assignedIssueDetails,
-        total_issues: totalIssues,
-        latest_commit_at: latest.at,
-        latest_commit_message: latest.message,
-        synced_at: new Date().toISOString(),
-      });
+      // Atomic replace via upsert on the github_repo_id unique constraint
+      // (added in migration 009).
+      const { error: upsertError } = await supabase
+        .from("github_activity")
+        .upsert(
+          {
+            github_repo_id: repo.id,
+            user_id: userId,
+            open_prs: openPrs,
+            review_requested_prs: reviewRequestedPrs.length,
+            review_requested_pr_details: reviewRequestedPrDetails,
+            assigned_issues: assignedIssueDetails.length,
+            assigned_issue_details: assignedIssueDetails,
+            total_issues: totalIssues,
+            latest_commit_at: latest.at,
+            latest_commit_message: latest.message,
+            synced_at: new Date().toISOString(),
+          },
+          { onConflict: "github_repo_id" },
+        );
 
-      if (insertError) {
-        errors.push(`github ${repo.id}: ${insertError.message}`);
+      if (upsertError) {
+        errors.push(`github ${repo.id}: ${upsertError.message}`);
       } else {
         synced += 1;
       }
     } catch (err) {
-      errors.push(`github ${repo.id}: ${err.message}`);
+      const retriable = err?.name === "TimeoutError" || err?.name === "AbortError";
+      errors.push(`github ${repo.id}: ${retriable ? "timeout (retriable)" : err.message}`);
     }
   }
 

@@ -38,11 +38,12 @@ export function useSettings(userId) {
       return;
     }
 
-    // We can select created_at / updated_at but NOT the token columns
-    // (column-level revoke). If a row exists the user has saved settings.
+    // Tokens themselves are RLS-locked; the boolean shadow columns added
+    // in migration 009 expose only whether each provider has a saved
+    // token, kept in sync by a database trigger.
     const { data, error } = await supabase
       .from("user_settings")
-      .select("user_id, updated_at")
+      .select("has_netlify_token, has_github_token")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -50,10 +51,11 @@ export function useSettings(userId) {
       console.error("Fetch settings error:", error);
     }
 
-    // If a row exists, tokens *may* have been saved. We can't read them,
-    // so we optimistically assume they were set if the row is present.
-    // The real check happens server-side in the edge functions.
-    dispatch({ type: "HYDRATED", hasNetlify: !!data, hasGithub: !!data });
+    dispatch({
+      type: "HYDRATED",
+      hasNetlify: !!data?.has_netlify_token,
+      hasGithub: !!data?.has_github_token,
+    });
   }, [userId]);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export function useSettings(userId) {
   const saveTokens = useCallback(
     async ({ netlifyToken, githubToken } = {}) => {
       if (!userId) {
-        return;
+        return { success: false, error: new Error("Not signed in") };
       }
 
       const payload = {};
@@ -79,7 +81,7 @@ export function useSettings(userId) {
       }
 
       if (Object.keys(payload).length === 0) {
-        return;
+        return { success: false, error: new Error("No tokens to save") };
       }
 
       const { error } = await supabase
@@ -88,7 +90,7 @@ export function useSettings(userId) {
 
       if (error) {
         console.error("Save tokens error:", error);
-        return;
+        return { success: false, error };
       }
 
       dispatch({
@@ -96,6 +98,7 @@ export function useSettings(userId) {
         hasNetlify: netlifyToken !== undefined ? !!netlifyToken : undefined,
         hasGithub: githubToken !== undefined ? !!githubToken : undefined,
       });
+      return { success: true };
     },
     [userId],
   );

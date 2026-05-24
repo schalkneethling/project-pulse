@@ -40,7 +40,6 @@ export function GitHubModal({ github, onSave, onClose }) {
           value={owner}
           onChange={(e) => setOwner(e.target.value)}
           placeholder="e.g. schalkneethling"
-          aria-label="Owner or organization"
           className={ic}
         />
       </div>
@@ -54,7 +53,6 @@ export function GitHubModal({ github, onSave, onClose }) {
           value={repo}
           onChange={(e) => setRepo(e.target.value)}
           placeholder="e.g. project-pulse"
-          aria-label="Repository"
           className={ic}
         />
       </div>
