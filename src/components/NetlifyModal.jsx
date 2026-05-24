@@ -65,8 +65,8 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
           value={form.siteName}
           onChange={(e) => setForm({ ...form, siteName: e.target.value })}
           placeholder="my-awesome-site"
+          aria-label="Site name"
           className={ic}
-          autoFocus
         />
       </div>
       <div>
@@ -79,6 +79,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
           value={form.url}
           onChange={(e) => setForm({ ...form, url: e.target.value })}
           placeholder="https://my-awesome-site.netlify.app"
+          aria-label="Site URL"
           className={ic}
         />
       </div>
@@ -92,6 +93,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
           value={form.siteId}
           onChange={(e) => setForm({ ...form, siteId: e.target.value })}
           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          aria-label="Netlify Site ID"
           className={ic}
         />
       </div>
@@ -124,6 +126,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
               value={form.branch}
               onChange={(e) => setForm({ ...form, branch: e.target.value })}
               placeholder="main"
+              aria-label="Branch"
               className={ic}
             />
           </div>
@@ -137,6 +140,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
               value={form.commitMessage}
               onChange={(e) => setForm({ ...form, commitMessage: e.target.value })}
               placeholder="fix: update header styles"
+              aria-label="Last commit message"
               className={ic}
             />
           </div>
@@ -150,6 +154,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
               value={form.deployTime}
               onChange={(e) => setForm({ ...form, deployTime: e.target.value })}
               placeholder="120"
+              aria-label="Build time in seconds"
               className={ic}
             />
           </div>
@@ -164,6 +169,7 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
                 onChange={(e) => setForm({ ...form, errorMessage: e.target.value })}
                 placeholder="Build failed: ..."
                 rows={2}
+                aria-label="Error message"
                 className={ic + " resize-none"}
               />
             </div>

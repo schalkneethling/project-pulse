@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef, useReducer } from "react";
+import { useState, useEffect, useRef, useReducer, useCallback } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
 import { useSettings } from "./hooks/useSettings";
 import { useTodos } from "./hooks/useTodos";
+import { useRealtimeSync } from "./hooks/useRealtimeSync";
 import { LoginScreen } from "./components/LoginScreen";
 import { TodoForm, TodoList, TodoCard } from "./components/Todos";
+import { Toast } from "./components/Toast";
 import { daysSince, fmtDate, fmtDateTime, fmtDuration, timeAgo } from "./lib/helpers";
 import { NetlifyModal } from "./components/NetlifyModal";
 import { SettingsModal } from "./components/SettingsModal";
@@ -302,6 +304,7 @@ function DeployCard({ netlify, onEdit, onRemove, onSync, syncing }) {
   if (!netlify) {
     return (
       <button
+        type="button"
         onClick={onEdit}
         className="w-full rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-500 hover:border-slate-600 hover:text-slate-400 transition-colors flex items-center justify-center gap-2"
       >
@@ -322,6 +325,7 @@ function DeployCard({ netlify, onEdit, onRemove, onSync, syncing }) {
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={onSync}
             disabled={syncing}
             className={`text-slate-500 hover:text-slate-300 transition-colors ${syncing ? "animate-spin" : ""}`}
@@ -330,6 +334,7 @@ function DeployCard({ netlify, onEdit, onRemove, onSync, syncing }) {
             <IconRefresh size={14} />
           </button>
           <button
+            type="button"
             onClick={onEdit}
             className="text-slate-500 hover:text-slate-300 transition-colors"
             aria-label="Edit Netlify settings"
@@ -337,6 +342,7 @@ function DeployCard({ netlify, onEdit, onRemove, onSync, syncing }) {
             <IconEdit size={14} />
           </button>
           <button
+            type="button"
             onClick={onRemove}
             className="text-slate-500 hover:text-red-400 transition-colors"
             aria-label="Remove Netlify link"
@@ -455,6 +461,7 @@ function GitHubCard({ github, onEdit, onRemove, onSync, syncing }) {
   if (!github) {
     return (
       <button
+        type="button"
         onClick={onEdit}
         className="w-full rounded-xl border border-dashed border-slate-700 p-4 text-sm text-slate-500 hover:border-slate-600 hover:text-slate-400 transition-colors flex items-center justify-center gap-2"
       >
@@ -477,6 +484,7 @@ function GitHubCard({ github, onEdit, onRemove, onSync, syncing }) {
         </div>
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={onSync}
             disabled={syncing}
             className={`text-slate-500 hover:text-slate-300 transition-colors ${syncing ? "animate-spin" : ""}`}
@@ -485,6 +493,7 @@ function GitHubCard({ github, onEdit, onRemove, onSync, syncing }) {
             <IconRefresh size={14} />
           </button>
           <button
+            type="button"
             onClick={onEdit}
             className="text-slate-500 hover:text-slate-300 transition-colors"
             aria-label="Edit GitHub settings"
@@ -492,6 +501,7 @@ function GitHubCard({ github, onEdit, onRemove, onSync, syncing }) {
             <IconEdit size={14} />
           </button>
           <button
+            type="button"
             onClick={onRemove}
             className="text-slate-500 hover:text-red-400 transition-colors"
             aria-label="Remove GitHub link"
@@ -584,14 +594,19 @@ function Overview({ projects, onSelect }) {
   const active = projects.filter((p) => p.status === "active");
   const blocked = projects.filter((p) => p.status === "blocked");
   const stale = projects.filter((p) => p.status === "active" && daysSince(p.updatedAt) >= 7);
-  const blockedTasks = projects.flatMap((p) =>
-    p.tasks.filter((t) => t.status === "blocked").map((t) => ({ ...t, pName: p.name, pId: p.id })),
-  );
-  const inProgress = projects.flatMap((p) =>
-    p.tasks
-      .filter((t) => t.status === "in_progress")
-      .map((t) => ({ ...t, pName: p.name, pId: p.id })),
-  );
+  // Single pass over projects → tasks, bucketed by status. Avoids the
+  // two-iteration filter+map pattern (and walks the task list once total).
+  const blockedTasks = [];
+  const inProgress = [];
+  for (const p of projects) {
+    for (const t of p.tasks) {
+      if (t.status === "blocked") {
+        blockedTasks.push({ ...t, pName: p.name, pId: p.id });
+      } else if (t.status === "in_progress") {
+        inProgress.push({ ...t, pName: p.name, pId: p.id });
+      }
+    }
+  }
   const nextSteps = projects.filter(
     (p) => p.nextStep && (p.status === "active" || p.status === "blocked"),
   );
@@ -609,7 +624,7 @@ function Overview({ projects, onSelect }) {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-100">Project Pulse</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-100">Project Pulse</h1>
         <p className="mt-1 text-slate-400">What needs your attention right now</p>
       </header>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -641,6 +656,7 @@ function Overview({ projects, onSelect }) {
               const ds = DEPLOY_STATUS[p.netlify.lastDeploy.state];
               return (
                 <button
+                  type="button"
                   key={p.id}
                   onClick={() => onSelect(p.id)}
                   className={`w-full text-left rounded-lg ${ds.bg} border ${ds.border} p-3 hover:brightness-125 transition-all`}
@@ -670,6 +686,7 @@ function Overview({ projects, onSelect }) {
           <div className="space-y-2">
             {reviewPRs.map((p) => (
               <button
+                type="button"
                 key={`pr-${p.id}`}
                 onClick={() => onSelect(p.id)}
                 className="w-full text-left rounded-lg bg-amber-950/20 border border-amber-900/30 p-3 hover:bg-amber-950/40 transition-colors"
@@ -686,6 +703,7 @@ function Overview({ projects, onSelect }) {
             ))}
             {assignedIssues.map((p) => (
               <button
+                type="button"
                 key={`iss-${p.id}`}
                 onClick={() => onSelect(p.id)}
                 className="w-full text-left rounded-lg bg-purple-950/20 border border-purple-900/30 p-3 hover:bg-purple-950/40 transition-colors"
@@ -713,6 +731,7 @@ function Overview({ projects, onSelect }) {
           <div className="space-y-2">
             {blocked.map((p) => (
               <button
+                type="button"
                 key={p.id}
                 onClick={() => onSelect(p.id)}
                 className="w-full text-left rounded-lg bg-red-950/30 border border-red-900/40 p-3 hover:bg-red-950/50 transition-colors"
@@ -723,6 +742,7 @@ function Overview({ projects, onSelect }) {
             ))}
             {blockedTasks.map((t) => (
               <button
+                type="button"
                 key={t.id}
                 onClick={() => onSelect(t.pId)}
                 className="w-full text-left rounded-lg bg-red-950/20 border border-red-900/30 p-3 hover:bg-red-950/40 transition-colors"
@@ -741,6 +761,7 @@ function Overview({ projects, onSelect }) {
           <div className="space-y-2">
             {nextSteps.map((p) => (
               <button
+                type="button"
                 key={p.id}
                 onClick={() => onSelect(p.id)}
                 className="w-full text-left rounded-lg bg-slate-800/60 border border-slate-700/50 p-3 hover:bg-slate-800 transition-colors"
@@ -765,6 +786,7 @@ function Overview({ projects, onSelect }) {
           <div className="space-y-2">
             {inProgress.map((t) => (
               <button
+                type="button"
                 key={t.id}
                 onClick={() => onSelect(t.pId)}
                 className="w-full text-left rounded-lg bg-blue-950/20 border border-blue-900/30 p-3 hover:bg-blue-950/40 transition-colors"
@@ -796,6 +818,7 @@ function ProjList({ projects, onSelect }) {
         const total = p.tasks.length;
         return (
           <button
+            type="button"
             key={p.id}
             onClick={() => onSelect(p.id)}
             className="w-full text-left rounded-xl bg-slate-800/60 border border-slate-700/50 p-4 hover:bg-slate-800 transition-colors group"
@@ -864,6 +887,7 @@ function Editable({
         />
       ) : (
         <button
+          type="button"
           onClick={() => onStartEdit(field, value)}
           className="w-full text-left px-3 py-2 rounded-lg border border-transparent hover:border-slate-600 hover:bg-slate-800/50 transition-colors min-h-[2.5rem] flex items-start"
         >
@@ -911,6 +935,261 @@ function detailReducer(state, action) {
     default:
       return state;
   }
+}
+
+/* ─── task list section ──────────────────────────────────── */
+function TasksSection({
+  project,
+  groups,
+  groupBorders,
+  newTask,
+  onNewTaskChange,
+  onAddTask,
+  onUpdateTask,
+  onDeleteTask,
+}) {
+  return (
+    <section>
+      <h3 className="text-lg font-semibold text-slate-200 mb-4">Tasks</h3>
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          value={newTask}
+          onChange={(e) => onNewTaskChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") onAddTask();
+          }}
+          placeholder="Add a task…"
+          aria-label="New task title"
+          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          type="button"
+          onClick={onAddTask}
+          disabled={!newTask.trim()}
+          aria-label="Add task"
+          className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors"
+        >
+          <IconPlus size={18} />
+        </button>
+      </div>
+      {Object.entries(groups).map(([status, tasks]) => {
+        if (!tasks.length) {
+          return null;
+        }
+        return (
+          <div key={status} className="mb-4">
+            <h4 className="text-xs text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+              {TASK_STATUS[status]} <span className="text-slate-500">({tasks.length})</span>
+            </h4>
+            <div className="space-y-1">
+              {tasks.map((t) => (
+                <div
+                  key={t.id}
+                  className={`flex items-center gap-3 rounded-lg bg-slate-800/40 border ${groupBorders[status]} p-3 group`}
+                >
+                  {status === "done" ? (
+                    <span className="text-emerald-500 shrink-0">
+                      <IconCheck />
+                    </span>
+                  ) : (
+                    <span className="w-4 shrink-0" />
+                  )}
+                  <span
+                    className={`flex-1 text-sm ${status === "done" ? "text-slate-500 line-through" : "text-slate-200"}`}
+                  >
+                    {t.title}
+                  </span>
+                  <select
+                    value={t.status}
+                    onChange={(e) => onUpdateTask(t.id, { status: e.target.value })}
+                    aria-label={`Status for ${t.title}`}
+                    className="bg-slate-700 border border-slate-600 rounded text-xs text-slate-300 px-2 py-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    {Object.entries(TASK_STATUS).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => onDeleteTask(t.id)}
+                    aria-label={`Delete ${t.title}`}
+                    className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all shrink-0"
+                  >
+                    <IconTrash size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {project.tasks.length === 0 && (
+        <p className="text-sm text-slate-500 text-center py-6">No tasks yet. Add one above.</p>
+      )}
+    </section>
+  );
+}
+
+/* ─── danger zone (delete project) ───────────────────────── */
+function DangerZone({ projectName, confirming, onConfirm, onShow, onCancel }) {
+  return (
+    <div className="border-t border-slate-800 pt-6">
+      {confirming ? (
+        <div className="flex items-center gap-3 bg-red-950/30 border border-red-900/40 rounded-lg p-4">
+          <p className="text-sm text-red-300 flex-1">
+            Permanently delete "{projectName || "this project"}"?
+          </p>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-medium text-white transition-colors"
+          >
+            Delete project
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onShow}
+          className="text-sm text-slate-500 hover:text-red-400 transition-colors"
+        >
+          Delete project
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── project detail header (back + editable name) ──────── */
+function ProjectHeader({
+  project,
+  editing,
+  tempValue,
+  onBack,
+  onTempChange,
+  onStartEdit,
+  onCommit,
+  onKeyDown,
+  inputRef,
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={onBack}
+        className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-200"
+        aria-label="Back to overview"
+      >
+        <IconBack />
+      </button>
+      <div className="flex-1 min-w-0">
+        {editing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={tempValue}
+            onChange={(e) => onTempChange(e.target.value)}
+            onKeyDown={onKeyDown}
+            onBlur={onCommit}
+            aria-label="Project name"
+            className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-1 text-xl font-semibold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={onStartEdit}
+            className="text-left group flex items-center gap-2"
+          >
+            <h2 className="text-xl font-semibold text-slate-200 truncate">
+              {project.name || "Untitled Project"}
+            </h2>
+            <span className="opacity-0 group-hover:opacity-100 text-slate-500 transition-opacity">
+              <IconEdit size={14} />
+            </span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── project metadata box (status + description + next step) ── */
+function ProjectMeta({
+  project,
+  editingField,
+  tempValue,
+  onStatusChange,
+  onTempChange,
+  onStartEdit,
+  onCommit,
+  onKeyDown,
+  inputRef,
+}) {
+  return (
+    <div className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-5 space-y-4">
+      <div>
+        <span className="block text-xs text-slate-400 uppercase tracking-wider mb-2">Status</span>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Project status">
+          {Object.entries(STATUS).map(([k, v]) => (
+            <button
+              type="button"
+              key={k}
+              onClick={() => onStatusChange(k)}
+              role="radio"
+              aria-checked={project.status === k}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${project.status === k ? `${v.color} text-white` : "bg-slate-700/50 text-slate-400 hover:bg-slate-700"}`}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <Editable
+        field="description"
+        label="Description"
+        value={project.description}
+        multi
+        editing={editingField === "description"}
+        tempValue={tempValue}
+        onTempChange={onTempChange}
+        onStartEdit={onStartEdit}
+        onCommit={onCommit}
+        onKeyDown={onKeyDown}
+        inputRef={inputRef}
+      />
+      <div className="rounded-lg bg-slate-900/50 border border-blue-900/30 p-4">
+        <Editable
+          field="nextStep"
+          label="⚡ Next Step"
+          value={project.nextStep}
+          editing={editingField === "nextStep"}
+          tempValue={tempValue}
+          onTempChange={onTempChange}
+          onStartEdit={onStartEdit}
+          onCommit={onCommit}
+          onKeyDown={onKeyDown}
+          inputRef={inputRef}
+        />
+        <p className="text-xs text-slate-500 mt-1 px-3">
+          What should you do when you next sit down with this project?
+        </p>
+      </div>
+      <div className="flex gap-4 text-xs text-slate-500 px-3">
+        <span>Created {fmtDate(project.createdAt)}</span>
+        <span>Updated {fmtDate(project.updatedAt)}</span>
+      </div>
+    </div>
+  );
 }
 
 function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack }) {
@@ -967,93 +1246,29 @@ function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack })
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="p-2 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-200"
-          aria-label="Back to overview"
-        >
-          <IconBack />
-        </button>
-        <div className="flex-1 min-w-0">
-          {d.editingField === "name" ? (
-            <input
-              ref={ref}
-              type="text"
-              value={d.tempValue}
-              onChange={(e) => dispatch({ type: "SET_TEMP", value: e.target.value })}
-              onKeyDown={(e) => onKey(e, "name")}
-              onBlur={() => commitEdit("name")}
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-1 text-xl font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          ) : (
-            <button
-              onClick={() => startEdit("name", project.name)}
-              className="text-left group flex items-center gap-2"
-            >
-              <h2 className="text-xl font-bold text-slate-200 truncate">
-                {project.name || "Untitled Project"}
-              </h2>
-              <span className="opacity-0 group-hover:opacity-100 text-slate-500 transition-opacity">
-                <IconEdit size={14} />
-              </span>
-            </button>
-          )}
-        </div>
-      </div>
+      <ProjectHeader
+        project={project}
+        editing={d.editingField === "name"}
+        tempValue={d.tempValue}
+        onBack={onBack}
+        onTempChange={(v) => dispatch({ type: "SET_TEMP", value: v })}
+        onStartEdit={() => startEdit("name", project.name)}
+        onCommit={() => commitEdit("name")}
+        onKeyDown={(e) => onKey(e, "name")}
+        inputRef={ref}
+      />
 
-      <div className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-5 space-y-4">
-        <div>
-          <span className="block text-xs text-slate-400 uppercase tracking-wider mb-2">Status</span>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Project status">
-            {Object.entries(STATUS).map(([k, v]) => (
-              <button
-                key={k}
-                onClick={() => actions.updateProject(project.id, { status: k })}
-                role="radio"
-                aria-checked={project.status === k}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${project.status === k ? `${v.color} text-white` : "bg-slate-700/50 text-slate-400 hover:bg-slate-700"}`}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Editable
-          field="description"
-          label="Description"
-          value={project.description}
-          multi
-          editing={d.editingField === "description"}
-          tempValue={d.tempValue}
-          onTempChange={(v) => dispatch({ type: "SET_TEMP", value: v })}
-          onStartEdit={startEdit}
-          onCommit={commitEdit}
-          onKeyDown={onKey}
-          inputRef={ref}
-        />
-        <div className="rounded-lg bg-slate-900/50 border border-blue-900/30 p-4">
-          <Editable
-            field="nextStep"
-            label="⚡ Next Step"
-            value={project.nextStep}
-            editing={d.editingField === "nextStep"}
-            tempValue={d.tempValue}
-            onTempChange={(v) => dispatch({ type: "SET_TEMP", value: v })}
-            onStartEdit={startEdit}
-            onCommit={commitEdit}
-            onKeyDown={onKey}
-            inputRef={ref}
-          />
-          <p className="text-xs text-slate-500 mt-1 px-3">
-            What should you do when you next sit down with this project?
-          </p>
-        </div>
-        <div className="flex gap-4 text-xs text-slate-500 px-3">
-          <span>Created {fmtDate(project.createdAt)}</span>
-          <span>Updated {fmtDate(project.updatedAt)}</span>
-        </div>
-      </div>
+      <ProjectMeta
+        project={project}
+        editingField={d.editingField}
+        tempValue={d.tempValue}
+        onStatusChange={(status) => actions.updateProject(project.id, { status })}
+        onTempChange={(v) => dispatch({ type: "SET_TEMP", value: v })}
+        onStartEdit={startEdit}
+        onCommit={commitEdit}
+        onKeyDown={onKey}
+        inputRef={ref}
+      />
 
       <DeployCard
         netlify={project.netlify}
@@ -1071,83 +1286,16 @@ function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack })
         syncing={d.syncingGithub}
       />
 
-      <section>
-        <h3 className="text-lg font-semibold text-slate-200 mb-4">Tasks</h3>
-        <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            value={d.newTask}
-            onChange={(e) => dispatch({ type: "SET_NEW_TASK", value: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleAddTask();
-            }}
-            placeholder="Add a task…"
-            className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={handleAddTask}
-            disabled={!d.newTask.trim()}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors"
-          >
-            <IconPlus size={18} />
-          </button>
-        </div>
-        {Object.entries(groups).map(([s, tasks]) => {
-          if (!tasks.length) return null;
-          return (
-            <div key={s} className="mb-4">
-              <h4 className="text-xs text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                {TASK_STATUS[s]} <span className="text-slate-500">({tasks.length})</span>
-              </h4>
-              <div className="space-y-1">
-                {tasks.map((t) => (
-                  <div
-                    key={t.id}
-                    className={`flex items-center gap-3 rounded-lg bg-slate-800/40 border ${gc[s]} p-3 group`}
-                  >
-                    {s === "done" ? (
-                      <span className="text-emerald-500 shrink-0">
-                        <IconCheck />
-                      </span>
-                    ) : (
-                      <span className="w-4 shrink-0" />
-                    )}
-                    <span
-                      className={`flex-1 text-sm ${s === "done" ? "text-slate-500 line-through" : "text-slate-200"}`}
-                    >
-                      {t.title}
-                    </span>
-                    <select
-                      value={t.status}
-                      onChange={(e) =>
-                        actions.updateTask(project.id, t.id, { status: e.target.value })
-                      }
-                      aria-label={`Status for ${t.title}`}
-                      className="bg-slate-700 border border-slate-600 rounded text-xs text-slate-300 px-2 py-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
-                    >
-                      {Object.entries(TASK_STATUS).map(([k, v]) => (
-                        <option key={k} value={k}>
-                          {v}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => actions.deleteTask(project.id, t.id)}
-                      aria-label={`Delete ${t.title}`}
-                      className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all shrink-0"
-                    >
-                      <IconTrash size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-        {project.tasks.length === 0 && (
-          <p className="text-sm text-slate-500 text-center py-6">No tasks yet — add one above</p>
-        )}
-      </section>
+      <TasksSection
+        project={project}
+        groups={groups}
+        groupBorders={gc}
+        newTask={d.newTask}
+        onNewTaskChange={(v) => dispatch({ type: "SET_NEW_TASK", value: v })}
+        onAddTask={handleAddTask}
+        onUpdateTask={(taskId, updates) => actions.updateTask(project.id, taskId, updates)}
+        onDeleteTask={(taskId) => actions.deleteTask(project.id, taskId)}
+      />
 
       {todos?.length > 0 && (
         <section>
@@ -1160,37 +1308,16 @@ function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack })
         </section>
       )}
 
-      <div className="border-t border-slate-800 pt-6">
-        {d.showDelete ? (
-          <div className="flex items-center gap-3 bg-red-950/30 border border-red-900/40 rounded-lg p-4">
-            <p className="text-sm text-red-300 flex-1">
-              Permanently delete "{project.name || "this project"}"?
-            </p>
-            <button
-              onClick={() => {
-                actions.deleteProject(project.id);
-                onBack();
-              }}
-              className="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-medium text-white transition-colors"
-            >
-              Delete
-            </button>
-            <button
-              onClick={() => dispatch({ type: "SET_SHOW", key: "showDelete", value: false })}
-              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => dispatch({ type: "SET_SHOW", key: "showDelete", value: true })}
-            className="text-sm text-slate-500 hover:text-red-400 transition-colors"
-          >
-            Delete project
-          </button>
-        )}
-      </div>
+      <DangerZone
+        projectName={project.name}
+        confirming={d.showDelete}
+        onConfirm={() => {
+          actions.deleteProject(project.id);
+          onBack();
+        }}
+        onShow={() => dispatch({ type: "SET_SHOW", key: "showDelete", value: true })}
+        onCancel={() => dispatch({ type: "SET_SHOW", key: "showDelete", value: false })}
+      />
 
       {d.showNetlify && (
         <NetlifyModal
@@ -1234,12 +1361,17 @@ export default function App() {
     removeGithubRepo,
     syncNetlifyDeploys,
     syncGithubActivity,
+    refetch,
   } = useProjects(user?.id);
   const { saveTokens } = useSettings(user?.id);
   const { todos, createTodo, updateTodo, deleteTodo } = useTodos(user?.id);
 
   const [view, setView] = useState("overview");
   const [showSettings, setShowSettings] = useState(false);
+  const [pulseToast, setPulseToast] = useState(false);
+
+  const handleRealtimeChange = useCallback(() => setPulseToast(true), []);
+  useRealtimeSync(user?.id, handleRealtimeChange);
   const selectedIdRef = useRef(null);
 
   const select = (id) => {
@@ -1308,8 +1440,8 @@ export default function App() {
                 ["todos", "TODOs"],
               ].map(([v, label]) => (
                 <button
-                  key={v}
                   type="button"
+                  key={v}
                   onClick={() => setView(v)}
                   className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                     view === v ? "bg-slate-700 text-white" : "text-slate-400 hover:text-slate-200"
@@ -1319,6 +1451,7 @@ export default function App() {
                 </button>
               ))}
               <button
+                type="button"
                 onClick={handleNew}
                 className="px-3 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium text-white transition-colors flex items-center gap-1.5"
                 aria-label="Add new project"
@@ -1328,6 +1461,7 @@ export default function App() {
               </button>
             </nav>
             <button
+              type="button"
               onClick={() => setShowSettings(true)}
               className="ml-3 p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
               aria-label="Settings"
@@ -1336,6 +1470,7 @@ export default function App() {
               <IconSettings size={18} />
             </button>
             <button
+              type="button"
               onClick={signOut}
               className="ml-1 p-2 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition-colors"
               aria-label="Sign out"
@@ -1350,12 +1485,13 @@ export default function App() {
 
         {view === "projects" && (
           <div>
-            <h1 className="text-2xl font-bold text-slate-100 mb-4">All Projects</h1>
+            <h1 className="text-2xl font-semibold text-slate-100 mb-4">All Projects</h1>
             <ProjList projects={projects} onSelect={select} />
             {projects.length === 0 && (
               <div className="text-center py-16">
                 <p className="text-slate-500">No projects yet</p>
                 <button
+                  type="button"
                   onClick={handleNew}
                   className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium text-white transition-colors"
                 >
@@ -1368,7 +1504,7 @@ export default function App() {
 
         {view === "todos" && (
           <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-slate-100">TODOs</h1>
+            <h1 className="text-2xl font-semibold text-slate-100">TODOs</h1>
             <TodoForm onCreate={createTodo} projects={projects} />
             <TodoList
               todos={todos}
@@ -1392,6 +1528,14 @@ export default function App() {
       </div>
       {showSettings && (
         <SettingsModal onClose={() => setShowSettings(false)} saveTokens={saveTokens} />
+      )}
+      {pulseToast && (
+        <Toast
+          message="New pulse update received."
+          actionLabel="Refresh data"
+          onAction={() => refetch()}
+          onDismiss={() => setPulseToast(false)}
+        />
       )}
     </div>
   );

@@ -54,8 +54,8 @@ export function SettingsModal({ onClose, saveTokens }) {
           value={netlifyToken}
           onChange={(e) => setNetlifyToken(e.target.value)}
           placeholder="Enter token to save or update"
+          aria-label="Netlify Personal Access Token"
           className={ic}
-          autoFocus
         />
         <p className="text-xs text-slate-500 mt-1">Used to auto-sync deploy status from Netlify.</p>
       </div>
@@ -69,6 +69,7 @@ export function SettingsModal({ onClose, saveTokens }) {
           value={githubToken}
           onChange={(e) => setGithubToken(e.target.value)}
           placeholder="Enter token to save or update"
+          aria-label="GitHub Personal Access Token"
           className={ic}
         />
         <p className="text-xs text-slate-500 mt-1">
