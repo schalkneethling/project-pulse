@@ -66,7 +66,6 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
           onChange={(e) => setForm({ ...form, siteName: e.target.value })}
           placeholder="my-awesome-site"
           className={ic}
-          autoFocus
         />
       </div>
       <div>

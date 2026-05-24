@@ -9,12 +9,14 @@ export function SettingsModal({ onClose, saveTokens }) {
   const [githubToken, setGithubToken] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const ic =
     "w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
   const lc = "block text-xs text-slate-400 uppercase tracking-wider mb-1";
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError(null);
     const updates = {};
     if (netlifyToken) {
       updates.netlifyToken = netlifyToken;
@@ -22,10 +24,14 @@ export function SettingsModal({ onClose, saveTokens }) {
     if (githubToken) {
       updates.githubToken = githubToken;
     }
-    await saveTokens(updates);
+    const result = await saveTokens(updates);
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (result?.success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } else {
+      setSaveError(result?.error?.message || "Could not save settings. Please try again.");
+    }
   };
 
   return (
@@ -55,7 +61,6 @@ export function SettingsModal({ onClose, saveTokens }) {
           onChange={(e) => setNetlifyToken(e.target.value)}
           placeholder="Enter token to save or update"
           className={ic}
-          autoFocus
         />
         <p className="text-xs text-slate-500 mt-1">Used to auto-sync deploy status from Netlify.</p>
       </div>
@@ -75,6 +80,11 @@ export function SettingsModal({ onClose, saveTokens }) {
           Used to sync PRs, issues, and commit activity from GitHub.
         </p>
       </div>
+      {saveError && (
+        <p role="alert" className="text-sm text-red-400">
+          {saveError}
+        </p>
+      )}
       <div className="flex gap-2 pt-2">
         <button
           type="button"

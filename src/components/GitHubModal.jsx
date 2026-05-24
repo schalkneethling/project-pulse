@@ -41,7 +41,6 @@ export function GitHubModal({ github, onSave, onClose }) {
           onChange={(e) => setOwner(e.target.value)}
           placeholder="e.g. schalkneethling"
           className={ic}
-          autoFocus
         />
       </div>
       <div>

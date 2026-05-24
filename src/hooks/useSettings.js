@@ -1,27 +1,49 @@
-import { useState, useEffect, useCallback } from "react";
+import { useReducer, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
 /**
  * Manages user settings — API tokens for Netlify and GitHub.
  *
  * Tokens are write-only from the frontend (column-level RLS prevents reading
- * them back). The hook tracks whether each token has been saved by checking
- * if the user_settings row exists and relying on a boolean flag returned
- * alongside the (redacted) row.
+ * them back). We track whether each token has been saved in a single reducer-
+ * managed slot and derive the per-provider booleans during render.
+ *
+ * Using `useReducer` (rather than `useState` mirrored from a `useEffect`)
+ * makes it explicit that the store is updated by named actions, not
+ * mirrored from props or other state.
  */
+
+const initialState = { loaded: false, hasNetlify: false, hasGithub: false };
+
+function settingsReducer(state, action) {
+  switch (action.type) {
+    case "HYDRATED":
+      return { loaded: true, hasNetlify: action.hasNetlify, hasGithub: action.hasGithub };
+    case "SAVED":
+      return {
+        loaded: true,
+        hasNetlify: action.hasNetlify ?? state.hasNetlify,
+        hasGithub: action.hasGithub ?? state.hasGithub,
+      };
+    default:
+      return state;
+  }
+}
+
 export function useSettings(userId) {
-  const [hasNetlifyToken, setHasNetlifyToken] = useState(false);
-  const [hasGithubToken, setHasGithubToken] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [state, dispatch] = useReducer(settingsReducer, initialState);
 
   const fetchSettings = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      return;
+    }
 
-    // We can select created_at / updated_at but NOT the token columns
-    // (column-level revoke). If a row exists the user has saved settings.
+    // Tokens themselves are RLS-locked; the boolean shadow columns added
+    // in migration 009 expose only whether each provider has a saved
+    // token, kept in sync by a database trigger.
     const { data, error } = await supabase
       .from("user_settings")
-      .select("user_id, updated_at")
+      .select("has_netlify_token, has_github_token")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -29,15 +51,11 @@ export function useSettings(userId) {
       console.error("Fetch settings error:", error);
     }
 
-    // If a row exists, tokens *may* have been saved. We can't read them,
-    // so we optimistically assume they were set if the row is present.
-    // The real check happens server-side in the edge functions.
-    if (data) {
-      setHasNetlifyToken(true);
-      setHasGithubToken(true);
-    }
-
-    setLoading(false);
+    dispatch({
+      type: "HYDRATED",
+      hasNetlify: !!data?.has_netlify_token,
+      hasGithub: !!data?.has_github_token,
+    });
   }, [userId]);
 
   useEffect(() => {
@@ -50,13 +68,21 @@ export function useSettings(userId) {
    */
   const saveTokens = useCallback(
     async ({ netlifyToken, githubToken } = {}) => {
-      if (!userId) return;
+      if (!userId) {
+        return { success: false, error: new Error("Not signed in") };
+      }
 
       const payload = {};
-      if (netlifyToken !== undefined) payload.netlify_api_token = netlifyToken;
-      if (githubToken !== undefined) payload.github_token = githubToken;
+      if (netlifyToken !== undefined) {
+        payload.netlify_api_token = netlifyToken;
+      }
+      if (githubToken !== undefined) {
+        payload.github_token = githubToken;
+      }
 
-      if (Object.keys(payload).length === 0) return;
+      if (Object.keys(payload).length === 0) {
+        return { success: false, error: new Error("No tokens to save") };
+      }
 
       const { error } = await supabase
         .from("user_settings")
@@ -64,14 +90,23 @@ export function useSettings(userId) {
 
       if (error) {
         console.error("Save tokens error:", error);
-        return;
+        return { success: false, error };
       }
 
-      if (netlifyToken !== undefined) setHasNetlifyToken(!!netlifyToken);
-      if (githubToken !== undefined) setHasGithubToken(!!githubToken);
+      dispatch({
+        type: "SAVED",
+        hasNetlify: netlifyToken !== undefined ? !!netlifyToken : undefined,
+        hasGithub: githubToken !== undefined ? !!githubToken : undefined,
+      });
+      return { success: true };
     },
     [userId],
   );
 
-  return { hasNetlifyToken, hasGithubToken, loading, saveTokens };
+  return {
+    hasNetlifyToken: state.hasNetlify,
+    hasGithubToken: state.hasGithub,
+    loading: !state.loaded,
+    saveTokens,
+  };
 }

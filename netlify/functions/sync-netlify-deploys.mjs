@@ -1,3 +1,9 @@
+// Entry point: Netlify discovers this file by filesystem convention
+// (see `functions = "netlify/functions"` in netlify.toml) and routes
+// requests to /.netlify/functions/sync-netlify-deploys here. It is
+// invoked from the browser via fetch() in src/hooks/useProjects.js —
+// not imported from the client bundle.
+
 import { createClient } from "@supabase/supabase-js";
 
 /**

@@ -29,10 +29,10 @@ describe("useSettings", () => {
     expect(result.current.loading).toBe(true);
   });
 
-  it("detects existing settings row", async () => {
+  it("reflects per-token presence flags returned from the DB", async () => {
     supabase.from.mockReturnValue(
       mockQuery({
-        data: { user_id: "user-1", updated_at: "2026-01-01" },
+        data: { has_netlify_token: true, has_github_token: false },
         error: null,
       }),
     );
@@ -44,7 +44,7 @@ describe("useSettings", () => {
     });
 
     expect(result.current.hasNetlifyToken).toBe(true);
-    expect(result.current.hasGithubToken).toBe(true);
+    expect(result.current.hasGithubToken).toBe(false);
   });
 
   it("reports no tokens when no settings row exists", async () => {
@@ -70,8 +70,9 @@ describe("useSettings", () => {
       expect(result.current.loading).toBe(false);
     });
 
+    let saveResult;
     await act(async () => {
-      await result.current.saveTokens({ netlifyToken: "nf-token-123" });
+      saveResult = await result.current.saveTokens({ netlifyToken: "nf-token-123" });
     });
 
     expect(supabase.from).toHaveBeenCalledWith("user_settings");
@@ -79,6 +80,7 @@ describe("useSettings", () => {
       { user_id: "user-1", netlify_api_token: "nf-token-123" },
       { onConflict: "user_id" },
     );
+    expect(saveResult).toEqual({ success: true });
   });
 
   it("does nothing when no userId", async () => {

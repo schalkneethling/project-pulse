@@ -8,13 +8,14 @@ export function LoginScreen({ onSignIn, loading, mode = "single" }) {
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
       <div className="max-w-sm w-full text-center space-y-8">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-100">Project Pulse</h1>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-100">Project Pulse</h1>
           <p className="mt-2 text-slate-400">Track your side projects, see what needs you.</p>
         </div>
 
         {showSignIn ? (
           <>
             <button
+              type="button"
               onClick={onSignIn}
               disabled={loading}
               className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white hover:bg-gray-50 text-gray-800 font-medium rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -41,7 +42,7 @@ export function LoginScreen({ onSignIn, loading, mode = "single" }) {
             </button>
 
             <p className="text-xs text-slate-600">
-              Your data is private — only you can see your projects.
+              Your data is private: only you can see your projects.
             </p>
           </>
         ) : (
@@ -58,6 +59,7 @@ export function LoginScreen({ onSignIn, loading, mode = "single" }) {
               </a>
             </p>
             <button
+              type="button"
               onClick={() => setShowSignIn(true)}
               className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
             >

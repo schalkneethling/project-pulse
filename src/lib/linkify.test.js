@@ -4,50 +4,50 @@ import { linkify } from "./linkify";
 describe("linkify", () => {
   it("returns plain text as a single text segment", () => {
     const result = linkify("no links here");
-    expect(result).toEqual([{ type: "text", value: "no links here" }]);
+    expect(result).toEqual([{ type: "text", value: "no links here", start: 0 }]);
   });
 
   it("converts an https URL into a link segment", () => {
     const result = linkify("check https://example.com for details");
     expect(result).toEqual([
-      { type: "text", value: "check " },
-      { type: "link", value: "https://example.com" },
-      { type: "text", value: " for details" },
+      { type: "text", value: "check ", start: 0 },
+      { type: "link", value: "https://example.com", start: 6 },
+      { type: "text", value: " for details", start: 25 },
     ]);
   });
 
   it("converts an http URL into a link segment", () => {
     const result = linkify("see http://example.com/path");
     expect(result).toEqual([
-      { type: "text", value: "see " },
-      { type: "link", value: "http://example.com/path" },
+      { type: "text", value: "see ", start: 0 },
+      { type: "link", value: "http://example.com/path", start: 4 },
     ]);
   });
 
   it("handles multiple URLs in one string", () => {
     const result = linkify("a https://one.com b https://two.com c");
     expect(result).toEqual([
-      { type: "text", value: "a " },
-      { type: "link", value: "https://one.com" },
-      { type: "text", value: " b " },
-      { type: "link", value: "https://two.com" },
-      { type: "text", value: " c" },
+      { type: "text", value: "a ", start: 0 },
+      { type: "link", value: "https://one.com", start: 2 },
+      { type: "text", value: " b ", start: 17 },
+      { type: "link", value: "https://two.com", start: 20 },
+      { type: "text", value: " c", start: 35 },
     ]);
   });
 
   it("handles a URL at the start of the string", () => {
     const result = linkify("https://start.com is the link");
     expect(result).toEqual([
-      { type: "link", value: "https://start.com" },
-      { type: "text", value: " is the link" },
+      { type: "link", value: "https://start.com", start: 0 },
+      { type: "text", value: " is the link", start: 17 },
     ]);
   });
 
   it("handles URLs with paths, query strings, and fragments", () => {
     const result = linkify("link: https://example.com/path?q=1&b=2#section");
     expect(result).toEqual([
-      { type: "text", value: "link: " },
-      { type: "link", value: "https://example.com/path?q=1&b=2#section" },
+      { type: "text", value: "link: ", start: 0 },
+      { type: "link", value: "https://example.com/path?q=1&b=2#section", start: 6 },
     ]);
   });
 
@@ -57,6 +57,6 @@ describe("linkify", () => {
 
   it("does not match URLs without protocol", () => {
     const result = linkify("visit example.com today");
-    expect(result).toEqual([{ type: "text", value: "visit example.com today" }]);
+    expect(result).toEqual([{ type: "text", value: "visit example.com today", start: 0 }]);
   });
 });
