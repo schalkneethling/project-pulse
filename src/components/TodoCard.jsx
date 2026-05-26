@@ -94,7 +94,7 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
 
       <div className="flex items-center gap-2">
         <span className="text-xs text-slate-500">Move to:</span>
-        {TRANSITIONS[status].map(([target, label, hover]) => (
+        {(TRANSITIONS[status] ?? []).map(([target, label, hover]) => (
           <button
             key={target}
             type="button"
