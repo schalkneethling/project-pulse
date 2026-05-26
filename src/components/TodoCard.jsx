@@ -85,22 +85,31 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
 
       <div className="flex items-center gap-2">
         <span className="text-xs text-slate-500">Move to:</span>
-        {status !== "open" && (
+        {status === "resolved" && (
           <button
             type="button"
             onClick={() => onUpdate(id, { status: "open" })}
             className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:border-sky-500 hover:text-sky-300 transition-colors"
           >
-            Open
+            Reopen
           </button>
         )}
-        {status !== "waiting" && (
+        {status !== "resolved" && status !== "waiting" && (
           <button
             type="button"
             onClick={() => onUpdate(id, { status: "waiting" })}
             className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:border-amber-500 hover:text-amber-300 transition-colors"
           >
             Waiting
+          </button>
+        )}
+        {status !== "resolved" && status !== "open" && (
+          <button
+            type="button"
+            onClick={() => onUpdate(id, { status: "open" })}
+            className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:border-sky-500 hover:text-sky-300 transition-colors"
+          >
+            Unblock
           </button>
         )}
         {status !== "resolved" && (
