@@ -75,29 +75,70 @@ grant select (has_netlify_token, has_github_token)
   to authenticated;
 
 -- ─── 4. Scheduled sync via pg_cron + pg_net ──────────────────────────
--- HOW TO ENABLE (run these manually after replacing the placeholders):
+-- HOW TO ENABLE (run these in the Supabase SQL Editor after replacing the
+-- two <replace-me> markers — secret + site URL). This is the exact SQL
+-- the live pulse.schalkneethling.com deployment runs, verified via
+-- `select schedule, command from cron.job where jobname = 'sync-all-activity';`
 --
+-- Why Vault and not `alter database … set`:
+--   Supabase's managed `postgres` role can't set custom GUCs, so the
+--   classic `current_setting('app.sync_all_secret')` pattern fails with
+--   ERROR 42501 (permission denied to set parameter). Vault is the
+--   supported alternative — `vault.decrypted_secrets` decrypts on read
+--   for the postgres role only, so the secret never appears in
+--   pg_stat_statements, cron logs, or pg_net request logs.
+--
+--   -- 4a. Enable the two extensions (idempotent).
 --   create extension if not exists pg_cron;
 --   create extension if not exists pg_net;
 --
---   -- Store the shared secret used to authenticate the cron → function call.
---   -- The same value must be set as SYNC_ALL_SECRET in the Netlify Function env.
---   alter database postgres set "app.sync_all_secret" = 'replace-with-long-random-secret';
+--   -- 4b. One-time: seed the shared bearer into Vault. The exact same
+--   -- value must be set as SYNC_ALL_SECRET in the Netlify Function env.
+--   -- Generate with `openssl rand -hex 32`.
+--   select vault.create_secret(
+--     '<replace-me-with-the-same-value-as-SYNC_ALL_SECRET>',
+--     'sync_all_secret',
+--     'Shared bearer token for pg_cron → sync-all Netlify Function'
+--   );
 --
+--   -- 4c. Install the cron schedule. The Authorization header reads the
+--   -- secret from Vault inline so it's decrypted per tick and never
+--   -- materialised into the job definition itself.
 --   select cron.schedule(
 --     'sync-all-activity',
 --     '*/30 * * * *',
 --     $$
 --       select net.http_post(
---         url := 'https://YOUR-SITE.netlify.app/.netlify/functions/sync-all',
+--         url := 'https://<your-site>/.netlify/functions/sync-all',
 --         headers := jsonb_build_object(
 --           'Content-Type', 'application/json',
---           'Authorization', 'Bearer ' || current_setting('app.sync_all_secret')
+--           'Authorization', 'Bearer ' || (
+--             select decrypted_secret
+--             from vault.decrypted_secrets
+--             where name = 'sync_all_secret'
+--           )
 --         ),
 --         body := '{}'::jsonb,
 --         timeout_milliseconds := 60000
 --       );
 --     $$
+--   );
+--
+-- To inspect runs:
+--   select start_time, status, return_message
+--   from cron.job_run_details
+--   where jobid = (select jobid from cron.job where jobname = 'sync-all-activity')
+--   order by start_time desc limit 10;
+--
+--   select created, status_code, error_msg
+--   from net._http_response
+--   order by created desc limit 10;
+--
+-- To rotate the secret: update both Netlify env + Vault, then redeploy
+-- Netlify. No cron change needed; the next tick picks up the new value.
+--   select vault.update_secret(
+--     (select id from vault.secrets where name = 'sync_all_secret'),
+--     '<new-value>'
 --   );
 --
 -- To unschedule:
