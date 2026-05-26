@@ -83,12 +83,13 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
         <span>{timeAgo(createdAt)}</span>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-slate-500">Move to:</span>
         {status !== "open" && (
           <button
             type="button"
             onClick={() => onUpdate(id, { status: "open" })}
-            className="text-xs text-slate-400 hover:text-sky-300 transition-colors"
+            className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:border-sky-500 hover:text-sky-300 transition-colors"
           >
             Open
           </button>
@@ -97,7 +98,7 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
           <button
             type="button"
             onClick={() => onUpdate(id, { status: "waiting" })}
-            className="text-xs text-slate-400 hover:text-amber-300 transition-colors"
+            className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:border-amber-500 hover:text-amber-300 transition-colors"
           >
             Waiting
           </button>
@@ -106,7 +107,7 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
           <button
             type="button"
             onClick={() => onUpdate(id, { status: "resolved" })}
-            className="text-xs text-slate-400 hover:text-emerald-300 transition-colors"
+            className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:border-emerald-500 hover:text-emerald-300 transition-colors"
           >
             Mark done
           </button>
@@ -114,7 +115,7 @@ export function TodoCard({ todo, onUpdate, onDelete, projectName }) {
         <button
           type="button"
           onClick={() => onDelete(id)}
-          className="text-xs text-slate-400 hover:text-red-400 transition-colors ml-auto"
+          className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:border-red-500 hover:text-red-400 transition-colors ml-auto"
         >
           Delete
         </button>
