@@ -147,11 +147,17 @@ describe("TodoCard", () => {
   it("calls onUpdate with new status when status is changed", async () => {
     const onUpdate = vi.fn();
     const user = userEvent.setup();
-    render(<TodoCard todo={baseTodo} onUpdate={onUpdate} onDelete={vi.fn()} />);
+    render(
+      <TodoCard
+        todo={{ ...baseTodo, status: "backlog" }}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+      />,
+    );
 
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await user.selectOptions(screen.getByRole("combobox", { name: /status for/i }), "done");
 
-    expect(onUpdate).toHaveBeenCalledWith("b1", { status: "resolved" });
+    expect(onUpdate).toHaveBeenCalledWith("b1", { status: "done" });
   });
 
   it("calls onDelete when delete button is clicked", async () => {

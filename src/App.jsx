@@ -5,7 +5,7 @@ import { useSettings } from "./hooks/useSettings";
 import { useTodos } from "./hooks/useTodos";
 import { useRealtimeSync } from "./hooks/useRealtimeSync";
 import { LoginScreen } from "./components/LoginScreen";
-import { TodoForm, TodoList, TodoCard } from "./components/Todos";
+import { TodoForm, TodoBoard, TodoCard, TodoEditModal } from "./components/Todos";
 import { Toast } from "./components/Toast";
 import { daysSince, fmtDate, fmtDateTime, fmtDuration, timeAgo } from "./lib/helpers";
 import { NetlifyModal } from "./components/NetlifyModal";
@@ -1192,8 +1192,9 @@ function ProjectMeta({
   );
 }
 
-function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack }) {
+function Detail({ project, projects, actions, todos, onUpdateTodo, onDeleteTodo, onBack }) {
   const [d, dispatch] = useReducer(detailReducer, detailInitial);
+  const [editingTodo, setEditingTodo] = useState(null);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -1302,10 +1303,28 @@ function Detail({ project, actions, todos, onUpdateTodo, onDeleteTodo, onBack })
           <h3 className="text-lg font-semibold text-slate-200 mb-4">TODOs</h3>
           <div className="space-y-3">
             {todos.map((todo) => (
-              <TodoCard key={todo.id} todo={todo} onUpdate={onUpdateTodo} onDelete={onDeleteTodo} />
+              <TodoCard
+                key={todo.id}
+                todo={todo}
+                onUpdate={onUpdateTodo}
+                onDelete={onDeleteTodo}
+                onEdit={setEditingTodo}
+              />
             ))}
           </div>
         </section>
+      )}
+
+      {editingTodo && (
+        <TodoEditModal
+          todo={editingTodo}
+          projects={projects}
+          onSave={async (updates) => {
+            await onUpdateTodo(editingTodo.id, updates);
+            setEditingTodo(null);
+          }}
+          onClose={() => setEditingTodo(null)}
+        />
       )}
 
       <DangerZone
@@ -1429,7 +1448,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200">
-      <div className="max-w-2xl mx-auto px-4 py-8 pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         {/* top bar */}
         {view !== "detail" && (
           <div className="flex items-center justify-between mb-6">
@@ -1481,10 +1500,14 @@ export default function App() {
           </div>
         )}
 
-        {view === "overview" && <Overview projects={projects} onSelect={select} />}
+        {view === "overview" && (
+          <div className="max-w-5xl mx-auto">
+            <Overview projects={projects} onSelect={select} />
+          </div>
+        )}
 
         {view === "projects" && (
-          <div>
+          <div className="max-w-5xl mx-auto">
             <h1 className="text-2xl font-semibold text-slate-100 mb-4">All Projects</h1>
             <ProjList projects={projects} onSelect={select} />
             {projects.length === 0 && (
@@ -1506,7 +1529,7 @@ export default function App() {
           <div className="space-y-6">
             <h1 className="text-2xl font-semibold text-slate-100">TODOs</h1>
             <TodoForm onCreate={createTodo} projects={projects} />
-            <TodoList
+            <TodoBoard
               todos={todos}
               onUpdate={updateTodo}
               onDelete={deleteTodo}
@@ -1516,14 +1539,17 @@ export default function App() {
         )}
 
         {view === "detail" && selected && (
+          <div className="max-w-4xl mx-auto">
           <Detail
             project={selected}
+            projects={projects}
             actions={actions}
             todos={todos.filter((todo) => todo.projectId === selected.id)}
             onUpdateTodo={updateTodo}
             onDeleteTodo={deleteTodo}
             onBack={() => setView("overview")}
           />
+          </div>
         )}
       </div>
       {showSettings && (
