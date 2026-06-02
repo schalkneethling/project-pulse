@@ -62,7 +62,6 @@ export function TodoBoard({ todos, onUpdate, onDelete, projects }) {
 
   const renderCard = (todo) => (
     <TodoCard
-      key={todo.id}
       todo={todo}
       onUpdate={onUpdate}
       onDelete={onDelete}
@@ -135,7 +134,7 @@ export function TodoBoard({ todos, onUpdate, onDelete, projects }) {
                       Drop todos here
                     </p>
                   ) : (
-                    items.map(renderCard)
+                    items.map((todo) => <div key={todo.id}>{renderCard(todo)}</div>)
                   )}
                 </div>
               </section>
