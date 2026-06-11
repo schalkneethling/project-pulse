@@ -28,5 +28,5 @@ export function writeViewToUrl(view, projectId) {
 
   const qs = params.toString();
   const next = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-  window.history.replaceState(null, "", next);
+  window.history.pushState(null, "", next);
 }

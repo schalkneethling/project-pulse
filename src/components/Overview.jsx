@@ -36,17 +36,11 @@ export function Overview({
   const blocked = projects.filter((p) => p.status === "blocked");
   const stale = projects.filter((p) => p.status === "active" && daysSince(p.updatedAt) >= 7);
 
-  const blockedTasks = [];
-  const inProgress = [];
-  for (const p of projects) {
-    for (const t of p.tasks) {
-      if (t.status === "blocked") {
-        blockedTasks.push({ ...t, pName: p.name, pId: p.id });
-      } else if (t.status === "in_progress") {
-        inProgress.push({ ...t, pName: p.name, pId: p.id });
-      }
-    }
-  }
+  const tasksWithProject = projects.flatMap((p) =>
+    (p.tasks ?? []).map((t) => ({ ...t, pName: p.name, pId: p.id })),
+  );
+  const blockedTasks = tasksWithProject.filter((t) => t.status === "blocked");
+  const inProgress = tasksWithProject.filter((t) => t.status === "in_progress");
 
   const nextSteps = projects.filter(
     (p) => p.nextStep && (p.status === "active" || p.status === "blocked"),
@@ -66,7 +60,7 @@ export function Overview({
 
   const dueSoon = (todos || [])
     .filter((t) => isDueSoonTodo(t))
-    .sort((a, b) => (a.dueDate < b.dueDate ? -1 : 1));
+    .sort((a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0));
 
   const hasUrgentSections =
     deployAlerts.length > 0 ||

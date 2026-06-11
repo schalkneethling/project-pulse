@@ -4,8 +4,9 @@ export function ProjectList({ projects, onSelect }) {
   return (
     <div className="space-y-3">
       {projects.map((p) => {
-        const done = p.tasks.filter((t) => t.status === "done").length;
-        const total = p.tasks.length;
+        const tasks = p.tasks ?? [];
+        const done = tasks.filter((t) => t.status === "done").length;
+        const total = tasks.length;
         return (
           <button
             type="button"

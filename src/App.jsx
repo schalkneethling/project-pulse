@@ -38,7 +38,6 @@ export default function App() {
 
   const initialUrl = readViewFromUrl();
   const [view, setViewState] = useState(initialUrl.view);
-  const [returnView, setReturnView] = useState("overview");
   const [showSettings, setShowSettings] = useState(false);
   const [pulseToast, setPulseToast] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState(null);
@@ -72,7 +71,6 @@ export default function App() {
 
   const select = (id) => {
     returnViewRef.current = view;
-    setReturnView(view);
     selectedIdRef.current = id;
     setView("detail", id);
   };
@@ -83,14 +81,13 @@ export default function App() {
     const p = await createProject();
     if (p) {
       returnViewRef.current = view;
-      setReturnView(view);
       selectedIdRef.current = p.id;
       setView("detail", p.id);
     }
   };
 
   const handleBack = () => {
-    const target = returnViewRef.current || returnView;
+    const target = returnViewRef.current || "overview";
     setView(target);
   };
 
@@ -262,7 +259,7 @@ export default function App() {
               onUpdateTodo={updateTodo}
               onDeleteTodo={deleteTodo}
               onBack={handleBack}
-              returnView={returnViewRef.current || returnView}
+              returnView={returnViewRef.current}
               hasNetlifyToken={hasNetlifyToken}
               hasGithubToken={hasGithubToken}
               onOpenSettings={() => setShowSettings(true)}

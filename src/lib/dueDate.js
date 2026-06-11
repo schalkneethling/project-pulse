@@ -20,7 +20,9 @@ export function getDueState(dueDate, status) {
 
 export function formatDateKey(dateKey) {
   const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(navigator?.languages?.[0] ?? "en-ZA", {
+  const locale =
+    (typeof navigator !== "undefined" ? navigator.languages?.[0] : undefined) ?? "en-ZA";
+  return new Date(year, month - 1, day).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",

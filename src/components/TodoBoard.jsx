@@ -108,7 +108,7 @@ export function TodoBoard({ todos, onUpdate, onDelete, projects }) {
             </button>
           ))}
         </div>
-        <span className="text-xs text-slate-500">{filtered.length} todos</span>
+        <span className="text-xs text-slate-500">{filtered.length} follow-ups</span>
       </div>
 
       {layout === "columns" ? (

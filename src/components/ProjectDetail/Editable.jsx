@@ -20,7 +20,7 @@ export function Editable({
       {editing ? (
         <Tag
           ref={inputRef}
-          type="text"
+          {...(!multi ? { type: "text" } : {})}
           value={tempValue}
           onChange={(e) => onTempChange(e.target.value)}
           onKeyDown={(e) => onKeyDown(e, field)}

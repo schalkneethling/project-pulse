@@ -90,16 +90,22 @@ export function ProjectDetail({
 
   const handleSyncNetlify = async () => {
     dispatch({ type: "SET_SYNCING", key: "syncingNetlify", value: true });
-    const result = await actions.syncNetlifyDeploys();
-    dispatch({ type: "SET_SYNCING", key: "syncingNetlify", value: false });
-    onSyncResult?.(result, "Netlify");
+    try {
+      const result = await actions.syncNetlifyDeploys();
+      onSyncResult?.(result, "Netlify");
+    } finally {
+      dispatch({ type: "SET_SYNCING", key: "syncingNetlify", value: false });
+    }
   };
 
   const handleSyncGithub = async () => {
     dispatch({ type: "SET_SYNCING", key: "syncingGithub", value: true });
-    const result = await actions.syncGithubActivity();
-    dispatch({ type: "SET_SYNCING", key: "syncingGithub", value: false });
-    onSyncResult?.(result, "GitHub");
+    try {
+      const result = await actions.syncGithubActivity();
+      onSyncResult?.(result, "GitHub");
+    } finally {
+      dispatch({ type: "SET_SYNCING", key: "syncingGithub", value: false });
+    }
   };
 
   const groups = {
