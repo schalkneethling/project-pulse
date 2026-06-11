@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
-export function SettingsModal({ onClose, saveTokens }) {
+export function SettingsModal({ onClose, saveTokens, hasNetlifyToken, hasGithubToken }) {
   const dialogRef = useRef(null);
   useFocusTrap(dialogRef);
 
@@ -53,6 +53,9 @@ export function SettingsModal({ onClose, saveTokens }) {
       <div>
         <label htmlFor="settings-netlify-token" className={lc}>
           Netlify Personal Access Token
+          {hasNetlifyToken && (
+            <span className="ml-2 normal-case text-emerald-400 font-normal">✓ Saved</span>
+          )}
         </label>
         <input
           id="settings-netlify-token"
@@ -62,11 +65,24 @@ export function SettingsModal({ onClose, saveTokens }) {
           placeholder="Enter token to save or update"
           className={ic}
         />
-        <p className="text-xs text-slate-500 mt-1">Used to auto-sync deploy status from Netlify.</p>
+        <p className="text-xs text-slate-500 mt-1">
+          Used to auto-sync deploy status from Netlify.{" "}
+          <a
+            href="https://app.netlify.com/user/applications#personal-access-tokens"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300"
+          >
+            Create a token
+          </a>
+        </p>
       </div>
       <div>
         <label htmlFor="settings-github-token" className={lc}>
           GitHub Personal Access Token
+          {hasGithubToken && (
+            <span className="ml-2 normal-case text-emerald-400 font-normal">✓ Saved</span>
+          )}
         </label>
         <input
           id="settings-github-token"
@@ -77,7 +93,15 @@ export function SettingsModal({ onClose, saveTokens }) {
           className={ic}
         />
         <p className="text-xs text-slate-500 mt-1">
-          Used to sync PRs, issues, and commit activity from GitHub.
+          Used to sync PRs, issues, and commit activity from GitHub.{" "}
+          <a
+            href="https://github.com/settings/tokens"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300"
+          >
+            Create a token
+          </a>
         </p>
       </div>
       {saveError && (

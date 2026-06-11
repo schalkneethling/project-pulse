@@ -106,7 +106,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
               rows={3}
               value={form.note}
               onChange={(e) => dispatch({ type: "SET", field: "note", value: e.target.value })}
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               required
             />
           </div>
@@ -120,7 +120,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
                 id="edit-status"
                 value={form.status}
                 onChange={(e) => dispatch({ type: "SET", field: "status", value: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {STATUS_ORDER.map((s) => (
                   <option key={s} value={s}>
@@ -139,7 +139,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
                 type="date"
                 value={form.dueDate}
                 onChange={(e) => dispatch({ type: "SET", field: "dueDate", value: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -152,7 +152,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
                 type="text"
                 value={form.who}
                 onChange={(e) => dispatch({ type: "SET", field: "who", value: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -165,7 +165,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
                 type="text"
                 value={form.source}
                 onChange={(e) => dispatch({ type: "SET", field: "source", value: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -178,7 +178,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
                 type="url"
                 value={form.sourceUrl}
                 onChange={(e) => dispatch({ type: "SET", field: "sourceUrl", value: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -191,7 +191,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
                   id="edit-project"
                   value={form.projectId}
                   onChange={(e) => dispatch({ type: "SET", field: "projectId", value: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">No project</option>
                   {projects.map((p) => (
