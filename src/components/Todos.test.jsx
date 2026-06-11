@@ -11,7 +11,7 @@ describe("TodoForm", () => {
   it("renders the todo input", () => {
     render(<TodoForm onCreate={vi.fn()} />);
 
-    expect(screen.getByRole("textbox", { name: /todo/i })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /follow-up/i })).toBeInTheDocument();
   });
 
   it("calls onCreate with note when submitted", async () => {
@@ -19,7 +19,7 @@ describe("TodoForm", () => {
     const user = userEvent.setup();
     render(<TodoForm onCreate={onCreate} />);
 
-    await user.type(screen.getByRole("textbox", { name: /todo/i }), "Check auth with Alice");
+    await user.type(screen.getByRole("textbox", { name: /follow-up/i }), "Check auth with Alice");
     await user.click(screen.getByRole("button", { name: /save/i }));
 
     expect(onCreate).toHaveBeenCalledWith(
@@ -42,7 +42,7 @@ describe("TodoForm", () => {
     const user = userEvent.setup();
     render(<TodoForm onCreate={onCreate} />);
 
-    const input = screen.getByRole("textbox", { name: /todo/i });
+    const input = screen.getByRole("textbox", { name: /follow-up/i });
     await user.type(input, "Some note");
     await user.click(screen.getByRole("button", { name: /save/i }));
 
@@ -69,7 +69,7 @@ describe("TodoForm", () => {
     const user = userEvent.setup();
     render(<TodoForm onCreate={onCreate} />);
 
-    await user.type(screen.getByRole("textbox", { name: /todo/i }), "API design discussion");
+    await user.type(screen.getByRole("textbox", { name: /follow-up/i }), "API design discussion");
     await user.click(screen.getByText(/more details/i));
     await user.type(screen.getByRole("textbox", { name: /who is involved/i }), "@alice");
     await user.type(screen.getByRole("textbox", { name: /^source$/i }), "#backend");
@@ -160,12 +160,13 @@ describe("TodoCard", () => {
     expect(onUpdate).toHaveBeenCalledWith("b1", { status: "done" });
   });
 
-  it("calls onDelete when delete button is clicked", async () => {
+  it("calls onDelete when delete is confirmed", async () => {
     const onDelete = vi.fn();
     const user = userEvent.setup();
     render(<TodoCard todo={baseTodo} onUpdate={vi.fn()} onDelete={onDelete} />);
 
-    await user.click(screen.getByRole("button", { name: /delete/i }));
+    await user.click(screen.getByRole("button", { name: /^delete$/i }));
+    await user.click(screen.getByRole("button", { name: /^yes$/i }));
 
     expect(onDelete).toHaveBeenCalledWith("b1");
   });
@@ -209,7 +210,7 @@ describe("TodoList", () => {
       source: "#backend",
       sourceUrl: null,
       projectId: null,
-      status: "open",
+      status: "backlog",
       dueDate: null,
       createdAt: "2026-04-01T10:00:00Z",
       updatedAt: "2026-04-01T10:00:00Z",
@@ -221,7 +222,7 @@ describe("TodoList", () => {
       source: "DM",
       sourceUrl: null,
       projectId: null,
-      status: "resolved",
+      status: "done",
       dueDate: null,
       createdAt: "2026-04-02T10:00:00Z",
       updatedAt: "2026-04-02T10:00:00Z",
@@ -233,7 +234,7 @@ describe("TodoList", () => {
       source: null,
       sourceUrl: null,
       projectId: null,
-      status: "waiting",
+      status: "on_hold",
       dueDate: null,
       createdAt: "2026-04-03T10:00:00Z",
       updatedAt: "2026-04-03T10:00:00Z",
@@ -252,9 +253,7 @@ describe("TodoList", () => {
     const user = userEvent.setup();
     render(<TodoList todos={todos} onUpdate={vi.fn()} onDelete={vi.fn()} />);
 
-    // Click the "open" filter tab (first one in the tab bar)
-    const tabs = screen.getAllByRole("button", { name: /^open$/i });
-    await user.click(tabs[0]);
+    await user.click(screen.getByRole("button", { name: /^backlog$/i }));
 
     expect(screen.getByText(/auth discussion/i)).toBeInTheDocument();
     expect(screen.queryByText(/deploy pipeline review/i)).not.toBeInTheDocument();
@@ -277,6 +276,6 @@ describe("TodoList", () => {
 
     await user.type(screen.getByRole("textbox", { name: /search/i }), "zzzznonexistent");
 
-    expect(screen.getByText(/no todos/i)).toBeInTheDocument();
+    expect(screen.getByText(/no follow-ups/i)).toBeInTheDocument();
   });
 });

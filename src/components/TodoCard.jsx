@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { linkify } from "../lib/linkify";
 import { timeAgo } from "../lib/helpers";
+import { getDueState, formatDateKey } from "../lib/dueDate";
 
 export const STATUS_META = {
   backlog: { label: "Backlog", pill: "bg-slate-500/20 text-slate-300" },
@@ -28,6 +30,7 @@ export function TodoCard({
   draggable = false,
   compact = false,
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const { id, note, who, source, sourceUrl, status, dueDate, createdAt } = todo;
   const dueState = getDueState(dueDate, status);
   const segments = linkify(note);
@@ -109,7 +112,7 @@ export function TodoCard({
           id={`status-${id}`}
           value={status}
           onChange={(e) => onUpdate(id, { status: e.target.value })}
-          className="text-xs bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+          className="text-xs bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label={`Status for ${note}`}
         >
           {STATUS_ORDER.map((s) => (
@@ -122,49 +125,42 @@ export function TodoCard({
           <button
             type="button"
             onClick={() => onEdit(todo)}
-            className="text-xs px-2 py-1 rounded border border-slate-600 text-slate-400 hover:border-sky-500 hover:text-sky-300 transition-colors"
+            className="text-xs px-2 py-1 rounded border border-slate-600 text-slate-400 hover:border-blue-500 hover:text-blue-300 transition-colors"
           >
             Edit
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => onDelete(id)}
-          className="text-xs px-2 py-1 rounded border border-slate-600 text-slate-400 hover:border-red-500 hover:text-red-400 transition-colors ml-auto"
-        >
-          Delete
-        </button>
+        {confirmingDelete ? (
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-xs text-slate-400">Delete?</span>
+            <button
+              type="button"
+              onClick={() => {
+                onDelete(id);
+                setConfirmingDelete(false);
+              }}
+              className="text-xs px-2 py-1 bg-red-600 hover:bg-red-500 rounded text-white"
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              className="text-xs px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="text-xs px-2 py-1 rounded border border-slate-600 text-slate-400 hover:border-red-500 hover:text-red-400 transition-colors ml-auto"
+          >
+            Delete
+          </button>
+        )}
       </div>
     </div>
   );
-}
-
-function getDueState(dueDate, status) {
-  if (!dueDate || status === "done") {
-    return null;
-  }
-
-  const today = new Date();
-  const todayKey = toDateKey(today);
-
-  if (dueDate === todayKey) {
-    return "today";
-  }
-  return dueDate < todayKey ? "late" : null;
-}
-
-function toDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function formatDateKey(dateKey) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(navigator?.languages?.[0] ?? "en-ZA", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }

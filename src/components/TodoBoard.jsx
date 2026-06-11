@@ -76,16 +76,16 @@ export function TodoBoard({ todos, onUpdate, onDelete, projects }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <label htmlFor="todo-search" className="sr-only">
-          Search todos
+          Search follow-ups
         </label>
         <input
           id="todo-search"
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search todos..."
-          aria-label="Search todos"
-          className="flex-1 max-w-md bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            placeholder="Search follow-ups..."
+            aria-label="Search follow-ups"
+          className="flex-1 max-w-md bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <div
           role="group"
@@ -108,7 +108,7 @@ export function TodoBoard({ todos, onUpdate, onDelete, projects }) {
             </button>
           ))}
         </div>
-        <span className="text-xs text-slate-500">{filtered.length} todos</span>
+        <span className="text-xs text-slate-500">{filtered.length} follow-ups</span>
       </div>
 
       {layout === "columns" ? (
@@ -121,7 +121,7 @@ export function TodoBoard({ todos, onUpdate, onDelete, projects }) {
               <section
                 key={status}
                 {...dragHandlers(status)}
-                className={`rounded-xl border ${COLUMN_TINT[status]} bg-slate-900/40 p-3 min-h-[60vh] transition-colors ${isOver ? "ring-2 ring-sky-500/60 bg-slate-900/70" : ""}`}
+                className={`rounded-xl border ${COLUMN_TINT[status]} bg-slate-900/40 p-3 min-h-[60vh] transition-colors ${isOver ? "ring-2 ring-blue-500/60 bg-slate-900/70" : ""}`}
                 aria-label={`${meta.label} column`}
               >
                 <header className="flex items-center justify-between mb-3 px-1">
@@ -151,7 +151,7 @@ export function TodoBoard({ todos, onUpdate, onDelete, projects }) {
               <section
                 key={status}
                 {...dragHandlers(status)}
-                className={`rounded-xl border ${COLUMN_TINT[status]} bg-slate-900/40 transition-colors ${isOver ? "ring-2 ring-sky-500/60 bg-slate-900/70" : ""}`}
+                className={`rounded-xl border ${COLUMN_TINT[status]} bg-slate-900/40 transition-colors ${isOver ? "ring-2 ring-blue-500/60 bg-slate-900/70" : ""}`}
                 aria-label={`${meta.label} lane`}
               >
                 <header className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-2 bg-slate-900/90 backdrop-blur rounded-t-xl border-b border-slate-800">

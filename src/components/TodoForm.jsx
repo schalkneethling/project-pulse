@@ -1,19 +1,23 @@
 import { useReducer, useState } from "react";
 
-const formInitial = { note: "", who: "", source: "", sourceUrl: "", projectId: "", dueDate: "" };
+const emptyForm = { note: "", who: "", source: "", sourceUrl: "", projectId: "", dueDate: "" };
 
 function formReducer(state, action) {
   switch (action.type) {
     case "SET_FIELD":
       return { ...state, [action.field]: action.value };
     case "RESET":
-      return formInitial;
+      return action.initial || emptyForm;
     default:
       return state;
   }
 }
 
-export function TodoForm({ onCreate, projects }) {
+export function TodoForm({ onCreate, projects, defaultProjectId, compact = false }) {
+  const formInitial = {
+    ...emptyForm,
+    projectId: defaultProjectId || "",
+  };
   const [form, dispatch] = useReducer(formReducer, formInitial);
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +41,7 @@ export function TodoForm({ onCreate, projects }) {
       });
       // Only reset on success — a failed save would otherwise discard the
       // user's input and force them to retype it.
-      dispatch({ type: "RESET" });
+      dispatch({ type: "RESET", initial: formInitial });
     } catch (err) {
       setSubmitError(err?.message || "Could not save todo. Please try again.");
     } finally {
@@ -56,9 +60,9 @@ export function TodoForm({ onCreate, projects }) {
           type="text"
           value={form.note}
           onChange={(e) => dispatch({ type: "SET_FIELD", field: "note", value: e.target.value })}
-          placeholder="Add a todo..."
-          aria-label="Todo note"
-          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+          placeholder={compact ? "Add a follow-up…" : "Add a follow-up…"}
+          aria-label="Follow-up note"
+          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           type="submit"
@@ -74,6 +78,7 @@ export function TodoForm({ onCreate, projects }) {
         </p>
       )}
 
+      {!compact && (
       <details className="group">
         <summary className="text-sm text-slate-400 hover:text-slate-300 transition-colors cursor-pointer list-none">
           More details
@@ -90,7 +95,7 @@ export function TodoForm({ onCreate, projects }) {
               onChange={(e) => dispatch({ type: "SET_FIELD", field: "who", value: e.target.value })}
               placeholder="Who is involved? e.g. @alice, @bob"
               aria-label="Who is involved"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -106,7 +111,7 @@ export function TodoForm({ onCreate, projects }) {
               }
               placeholder="Where? e.g. #backend, DM, Jira-123"
               aria-label="Source"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -122,7 +127,7 @@ export function TodoForm({ onCreate, projects }) {
               }
               placeholder="Link (optional)"
               aria-label="Source link"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -137,7 +142,7 @@ export function TodoForm({ onCreate, projects }) {
                 dispatch({ type: "SET_FIELD", field: "dueDate", value: e.target.value })
               }
               aria-label="Due date"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           {projects?.length > 0 && (
@@ -152,7 +157,7 @@ export function TodoForm({ onCreate, projects }) {
                   dispatch({ type: "SET_FIELD", field: "projectId", value: e.target.value })
                 }
                 aria-label="Linked project"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">No project</option>
                 {projects.map((p) => (
@@ -165,6 +170,7 @@ export function TodoForm({ onCreate, projects }) {
           )}
         </div>
       </details>
+      )}
     </form>
   );
 }
