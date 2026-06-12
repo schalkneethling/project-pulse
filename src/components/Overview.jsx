@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { daysSince } from "../lib/helpers";
 import { getDueState, formatDateKey } from "../lib/dueDate";
 import { DEPLOY_STATUS } from "../lib/constants";
+import { visibleProjects, activeWorkItems } from "../lib/workItems";
 import {
   IconRocket,
   IconGithub,
@@ -16,15 +17,13 @@ import { IntegrationBanner } from "./IntegrationBanner";
 const STAT_SECTIONS = {
   Active: "section-active",
   Blocked: "section-blocked",
-  "In Progress": "section-in-progress",
+  ActiveWork: "section-active-work",
   "Stale (7d+)": "section-stale",
 };
 
 export function Overview({
   projects,
-  todos,
   onSelect,
-  onSelectFollowUp,
   onNewProject,
   hasNetlifyToken,
   hasGithubToken,
@@ -32,34 +31,36 @@ export function Overview({
 }) {
   const sectionRefs = useRef({});
 
-  const active = projects.filter((p) => p.status === "active");
-  const blocked = projects.filter((p) => p.status === "blocked");
-  const stale = projects.filter((p) => p.status === "active" && daysSince(p.updatedAt) >= 7);
+  const visible = visibleProjects(projects);
 
-  const tasksWithProject = projects.flatMap((p) =>
-    (p.tasks ?? []).map((t) => ({ ...t, pName: p.name, pId: p.id })),
+  const active = visible.filter((p) => p.status === "active");
+  const blocked = visible.filter((p) => p.status === "blocked");
+  const stale = visible.filter((p) => p.status === "active" && daysSince(p.updatedAt) >= 7);
+
+  const tasksWithProject = visible.flatMap((p) =>
+    activeWorkItems(p.tasks).map((t) => ({ ...t, pName: p.name, pId: p.id })),
   );
   const blockedTasks = tasksWithProject.filter((t) => t.status === "blocked");
   const inProgress = tasksWithProject.filter((t) => t.status === "in_progress");
 
-  const nextSteps = projects.filter(
+  const nextSteps = visible.filter(
     (p) => p.nextStep && (p.status === "active" || p.status === "blocked"),
   );
-  const deployAlerts = projects.filter((p) => {
+  const deployAlerts = visible.filter((p) => {
     const s = p.netlify?.lastDeploy?.state;
     return s === "error" || s === "building";
   });
-  const reviewPRs = projects.filter((p) => p.github?.activity?.reviewRequestedPrs > 0);
-  const assignedIssues = projects.filter((p) => p.github?.activity?.assignedIssues > 0);
-  const ghStale = projects.filter((p) => {
+  const reviewPRs = visible.filter((p) => p.github?.activity?.reviewRequestedPrs > 0);
+  const assignedIssues = visible.filter((p) => p.github?.activity?.assignedIssues > 0);
+  const ghStale = visible.filter((p) => {
     if (!p.github?.activity?.latestCommitAt || p.status !== "active") return false;
     return daysSince(p.github.activity.latestCommitAt) >= 7;
   });
 
   const staleProjects = [...new Map([...stale, ...ghStale].map((p) => [p.id, p])).values()];
 
-  const dueSoon = (todos || [])
-    .filter((t) => isDueSoonTodo(t))
+  const dueSoon = tasksWithProject
+    .filter((t) => isDueSoonTask(t))
     .sort((a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0));
 
   const hasUrgentSections =
@@ -77,7 +78,7 @@ export function Overview({
   const statCards = [
     { l: "Active", v: active.length, c: "text-emerald-400", section: STAT_SECTIONS.Active },
     { l: "Blocked", v: blocked.length + blockedTasks.length, c: "text-red-400", section: STAT_SECTIONS.Blocked },
-    { l: "In Progress", v: inProgress.length, c: "text-blue-400", section: STAT_SECTIONS["In Progress"] },
+    { l: "Active", v: inProgress.length, c: "text-blue-400", section: STAT_SECTIONS.ActiveWork },
     {
       l: "Stale (7d+)",
       v: staleProjects.length,
@@ -96,21 +97,23 @@ export function Overview({
       <IntegrationBanner
         hasNetlifyToken={hasNetlifyToken}
         hasGithubToken={hasGithubToken}
-        projectCount={projects.length}
+        projectCount={visible.length}
         onOpenSettings={onOpenSettings}
       />
 
-      {projects.length > 0 && (
+      {visible.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {statCards.map((x) => (
+          {statCards.map((x, i) => (
             <button
               type="button"
-              key={x.l}
+              key={`${x.l}-${i}`}
               onClick={() => x.section && scrollToSection(x.section)}
               disabled={x.v === 0}
               className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-4 text-left hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-default disabled:hover:bg-slate-800/60"
             >
-              <p className="text-xs text-slate-400 uppercase tracking-wider">{x.l}</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">
+                {i === 2 ? "Active Work" : x.l}
+              </p>
               <p className={`mt-1 text-2xl font-bold ${x.c}`}>{x.v}</p>
             </button>
           ))}
@@ -206,7 +209,7 @@ export function Overview({
             <IconAlert size={20} />
             Blocked on You
           </h2>
-          <p className="text-xs text-slate-500 mb-3">Projects and tasks that cannot move forward</p>
+          <p className="text-xs text-slate-500 mb-3">Projects and work that cannot move forward</p>
           <div className="space-y-2">
             {blocked.map((p) => (
               <button
@@ -243,16 +246,15 @@ export function Overview({
             <IconClock size={20} />
             Due Today / Overdue
           </h2>
-          <p className="text-xs text-slate-500 mb-3">Follow-ups with due dates that need action</p>
+          <p className="text-xs text-slate-500 mb-3">Work items with due dates that need action</p>
           <div className="space-y-2">
             {dueSoon.map((t) => {
               const dueState = getDueState(t.dueDate, t.status);
-              const project = projects.find((p) => p.id === t.projectId);
               return (
                 <button
                   type="button"
                   key={t.id}
-                  onClick={() => (t.projectId ? onSelect(t.projectId) : onSelectFollowUp?.())}
+                  onClick={() => onSelect(t.pId)}
                   className={`w-full text-left rounded-lg border p-3 hover:brightness-110 transition-all ${
                     dueState === "late"
                       ? "bg-red-950/30 border-red-900/40"
@@ -260,15 +262,15 @@ export function Overview({
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    {project && <span className="text-sm text-slate-400">{project.name}</span>}
-                    <TypeBadge type="follow-up" />
+                    <span className="text-sm text-slate-400">{t.pName}</span>
+                    <TypeBadge type="task" />
                     <span
                       className={`ml-auto text-xs ${dueState === "late" ? "text-red-400" : "text-yellow-400"}`}
                     >
                       {dueState === "late" ? "Overdue" : "Due today"} · {formatDateKey(t.dueDate)}
                     </span>
                   </div>
-                  <p className="font-medium text-slate-200 mt-1">{t.note}</p>
+                  <p className="font-medium text-slate-200 mt-1">{t.title}</p>
                 </button>
               );
             })}
@@ -309,11 +311,11 @@ export function Overview({
       {inProgress.length > 0 && (
         <section
           ref={(el) => {
-            sectionRefs.current[STAT_SECTIONS["In Progress"]] = el;
+            sectionRefs.current[STAT_SECTIONS.ActiveWork] = el;
           }}
         >
-          <h2 className="text-lg font-semibold text-blue-400 mb-1">Currently In Progress</h2>
-          <p className="text-xs text-slate-500 mb-3">Project tasks you have already started</p>
+          <h2 className="text-lg font-semibold text-blue-400 mb-1">Active Work</h2>
+          <p className="text-xs text-slate-500 mb-3">Work you have already started</p>
           <div className="space-y-2">
             {inProgress.map((t) => (
               <button
@@ -363,7 +365,7 @@ export function Overview({
         </section>
       )}
 
-      {projects.length === 0 && (
+      {visible.length === 0 && projects.length === 0 && (
         <div className="text-center py-16 text-slate-500">
           <p className="text-lg">No projects yet</p>
           <p className="mt-1 text-sm">Add your first project to get started</p>
@@ -379,16 +381,16 @@ export function Overview({
         </div>
       )}
 
-      {projects.length > 0 && !hasUrgentSections && nextSteps.length === 0 && inProgress.length === 0 && staleProjects.length === 0 && (
+      {visible.length > 0 && !hasUrgentSections && nextSteps.length === 0 && inProgress.length === 0 && staleProjects.length === 0 && (
         <div className="text-center py-12 rounded-xl bg-slate-800/40 border border-slate-700/50">
           <p className="text-lg text-emerald-400 font-medium">All clear</p>
           <p className="mt-1 text-sm text-slate-400">
-            Nothing urgent — pick a next step from your active projects or add one in project detail.
+            Nothing urgent — pick a next step from your active projects or add work in project detail.
           </p>
         </div>
       )}
 
-      {projects.length > 0 && !hasUrgentSections && (nextSteps.length > 0 || inProgress.length > 0) && (
+      {visible.length > 0 && !hasUrgentSections && (nextSteps.length > 0 || inProgress.length > 0) && (
         <div className="text-center py-8 text-slate-500 text-sm">
           No urgent alerts — you are caught up on deploys, GitHub, and blockers.
         </div>
@@ -397,7 +399,7 @@ export function Overview({
   );
 }
 
-function isDueSoonTodo(todo) {
-  const state = getDueState(todo.dueDate, todo.status);
+function isDueSoonTask(task) {
+  const state = getDueState(task.dueDate, task.status);
   return state === "today" || state === "late";
 }

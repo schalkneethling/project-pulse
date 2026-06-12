@@ -1,18 +1,17 @@
 import { useEffect, useReducer, useRef, useState } from "react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
-import { STATUS_ORDER, STATUS_META } from "./TodoCard";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { WORK_STATUS, WORK_STATUS_ORDER } from "../../lib/constants";
 
-const FIELDS = ["note", "who", "source", "sourceUrl", "projectId", "dueDate", "status"];
+const FIELDS = ["title", "who", "source", "sourceUrl", "dueDate", "status"];
 
-function init(todo) {
+function init(item) {
   return {
-    note: todo.note ?? "",
-    who: todo.who ?? "",
-    source: todo.source ?? "",
-    sourceUrl: todo.sourceUrl ?? "",
-    projectId: todo.projectId ?? "",
-    dueDate: todo.dueDate ?? "",
-    status: todo.status ?? "backlog",
+    title: item.title ?? "",
+    who: item.who ?? "",
+    source: item.source ?? "",
+    sourceUrl: item.sourceUrl ?? "",
+    dueDate: item.dueDate ?? "",
+    status: item.status ?? "todo",
   };
 }
 
@@ -23,8 +22,8 @@ function reducer(state, action) {
   return state;
 }
 
-export function TodoEditModal({ todo, projects, onSave, onClose }) {
-  const [form, dispatch] = useReducer(reducer, todo, init);
+export function WorkItemEditModal({ item, onSave, onClose }) {
+  const [form, dispatch] = useReducer(reducer, item, init);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const containerRef = useRef(null);
@@ -40,12 +39,12 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.note.trim() || saving) return;
+    if (!form.title.trim() || saving) return;
 
     const updates = {};
     for (const f of FIELDS) {
-      const current = todo[f] ?? (f === "status" ? "backlog" : "");
-      const next = f === "note" ? form.note.trim() : form[f];
+      const current = item[f] ?? (f === "status" ? "todo" : "");
+      const next = f === "title" ? form.title.trim() : form[f];
       const normalized = next === "" ? null : next;
       const normalizedCurrent = current === "" ? null : current;
       if (normalized !== normalizedCurrent) {
@@ -63,7 +62,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
     try {
       await onSave(updates);
     } catch (err) {
-      setError(err?.message || "Could not save todo.");
+      setError(err?.message || "Could not save work item.");
       setSaving(false);
     }
   };
@@ -72,7 +71,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="todo-edit-title"
+      aria-labelledby="work-edit-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -83,8 +82,8 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
         className="w-full max-w-xl bg-slate-900 border border-slate-700 rounded-xl p-6 space-y-4"
       >
         <header className="flex items-center justify-between">
-          <h2 id="todo-edit-title" className="text-lg font-semibold text-slate-100">
-            Edit todo
+          <h2 id="work-edit-title" className="text-lg font-semibold text-slate-100">
+            Edit work item
           </h2>
           <button
             type="button"
@@ -98,14 +97,14 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label htmlFor="edit-note" className="block text-xs uppercase tracking-wider text-slate-400 mb-1">
-              Note
+            <label htmlFor="edit-title" className="block text-xs uppercase tracking-wider text-slate-400 mb-1">
+              Title
             </label>
             <textarea
-              id="edit-note"
-              rows={3}
-              value={form.note}
-              onChange={(e) => dispatch({ type: "SET", field: "note", value: e.target.value })}
+              id="edit-title"
+              rows={2}
+              value={form.title}
+              onChange={(e) => dispatch({ type: "SET", field: "title", value: e.target.value })}
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               required
             />
@@ -122,9 +121,9 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
                 onChange={(e) => dispatch({ type: "SET", field: "status", value: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {STATUS_ORDER.map((s) => (
+                {WORK_STATUS_ORDER.map((s) => (
                   <option key={s} value={s}>
-                    {STATUS_META[s].label}
+                    {WORK_STATUS[s].label}
                   </option>
                 ))}
               </select>
@@ -181,27 +180,6 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
-            {projects?.length > 0 && (
-              <div className="sm:col-span-2">
-                <label htmlFor="edit-project" className="block text-xs uppercase tracking-wider text-slate-400 mb-1">
-                  Linked project
-                </label>
-                <select
-                  id="edit-project"
-                  value={form.projectId}
-                  onChange={(e) => dispatch({ type: "SET", field: "projectId", value: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">No project</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name || "Untitled"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
           {error && (
@@ -220,7 +198,7 @@ export function TodoEditModal({ todo, projects, onSave, onClose }) {
             </button>
             <button
               type="submit"
-              disabled={saving || !form.note.trim()}
+              disabled={saving || !form.title.trim()}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 rounded-lg text-sm font-medium text-white transition-colors"
             >
               {saving ? "Saving…" : "Save changes"}

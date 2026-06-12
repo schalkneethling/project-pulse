@@ -2,11 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { useProjects } from "./hooks/useProjects";
 import { useSettings } from "./hooks/useSettings";
-import { useTodos } from "./hooks/useTodos";
 import { useRealtimeSync } from "./hooks/useRealtimeSync";
 import { readViewFromUrl, writeViewToUrl } from "./lib/routing";
+import { visibleProjects } from "./lib/workItems";
 import { LoginScreen } from "./components/LoginScreen";
-import { TodoForm, TodoBoard } from "./components/Todos";
 import { Toast } from "./components/Toast";
 import { Overview } from "./components/Overview";
 import { ProjectList } from "./components/ProjectList";
@@ -22,9 +21,13 @@ export default function App() {
     createProject,
     updateProject,
     deleteProject,
+    archiveProject,
+    unarchiveProject,
     addTask,
     updateTask,
     deleteTask,
+    archiveTask,
+    unarchiveTask,
     saveNetlifySite,
     removeNetlifySite,
     saveGithubRepo,
@@ -34,7 +37,6 @@ export default function App() {
     refetch,
   } = useProjects(user?.id);
   const { hasNetlifyToken, hasGithubToken, saveTokens } = useSettings(user?.id);
-  const { todos, loading: todosLoading, createTodo, updateTodo, deleteTodo } = useTodos(user?.id);
 
   const initialUrl = readViewFromUrl();
   const [view, setViewState] = useState(initialUrl.view);
@@ -76,6 +78,7 @@ export default function App() {
   };
 
   const selected = projects.find((p) => p.id === selectedIdRef.current);
+  const visibleCount = visibleProjects(projects).length;
 
   const handleNew = async () => {
     const p = await createProject();
@@ -128,9 +131,13 @@ export default function App() {
   const actions = {
     updateProject,
     deleteProject,
+    archiveProject,
+    unarchiveProject,
     addTask,
     updateTask,
     deleteTask,
+    archiveTask,
+    unarchiveTask,
     saveNetlifySite,
     removeNetlifySite,
     saveGithubRepo,
@@ -147,8 +154,7 @@ export default function App() {
             <nav className="flex items-center gap-1 flex-1 bg-slate-800/60 rounded-xl p-1 border border-slate-700/50">
               {[
                 ["overview", "Overview"],
-                ["projects", `Projects (${projects.length})`],
-                ["todos", "Follow-ups"],
+                ["projects", `Projects (${visibleCount})`],
               ].map(([v, label]) => (
                 <button
                   type="button"
@@ -196,9 +202,7 @@ export default function App() {
           <div className="max-w-5xl mx-auto">
             <Overview
               projects={projects}
-              todos={todos}
               onSelect={select}
-              onSelectFollowUp={() => setView("todos")}
               onNewProject={handleNew}
               hasNetlifyToken={hasNetlifyToken}
               hasGithubToken={hasGithubToken}
@@ -226,38 +230,11 @@ export default function App() {
           </div>
         )}
 
-        {view === "todos" && (
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-100">Follow-ups</h1>
-              <p className="text-sm text-slate-500 mt-1">Quick captures across projects</p>
-            </div>
-            {todosLoading ? (
-              <div className="animate-pulse text-slate-400 py-12 text-center">Loading follow-ups…</div>
-            ) : (
-              <>
-                <TodoForm onCreate={createTodo} projects={projects} />
-                <TodoBoard
-                  todos={todos}
-                  onUpdate={updateTodo}
-                  onDelete={deleteTodo}
-                  projects={projects}
-                />
-              </>
-            )}
-          </div>
-        )}
-
         {view === "detail" && selected && (
           <div className="max-w-4xl mx-auto">
             <ProjectDetail
               project={selected}
-              projects={projects}
               actions={actions}
-              todos={todos.filter((todo) => todo.projectId === selected.id)}
-              onCreateTodo={createTodo}
-              onUpdateTodo={updateTodo}
-              onDeleteTodo={deleteTodo}
               onBack={handleBack}
               returnView={returnViewRef.current}
               hasNetlifyToken={hasNetlifyToken}
