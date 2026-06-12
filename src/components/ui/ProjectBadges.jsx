@@ -1,4 +1,4 @@
-import { daysSince, fmtDate } from "../../lib/helpers";
+import { daysSince, fmtDate, lastActivityAt } from "../../lib/helpers";
 import { STATUS, DEPLOY_STATUS } from "../../lib/constants";
 import { IconClock, IconGithub } from "../icons";
 
@@ -12,14 +12,15 @@ export function StatusBadge({ status }) {
   );
 }
 
-export function Stale({ updatedAt }) {
-  const days = daysSince(updatedAt);
+export function Stale({ project }) {
+  const activityAt = lastActivityAt(project);
+  const days = daysSince(activityAt);
   if (days === null || days < 7) return null;
   const label = days >= 30 ? `${Math.floor(days / 30)}mo stale` : `${days}d stale`;
   return (
     <span
       className={`inline-flex items-center gap-1 text-xs ${days >= 14 ? "text-red-400" : "text-amber-400"}`}
-      title={`Last updated ${fmtDate(updatedAt)}`}
+      title={`Last activity ${fmtDate(activityAt)}`}
     >
       <IconClock size={12} />
       {label}
