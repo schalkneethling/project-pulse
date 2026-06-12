@@ -111,6 +111,7 @@ export default async (request) => {
       const separator = url.includes("?") ? "&" : "?";
       const pageData = await ghFetch(`${url}${separator}page=${page}`);
 
+      if (pageData === null) return null;
       if (!Array.isArray(pageData) || pageData.length === 0) break;
 
       results.push(...pageData);
@@ -176,25 +177,36 @@ export default async (request) => {
             }
           : { at: null, message: null };
 
-      // Delete old activity for this repo, then insert fresh snapshot
-      await supabase.from("github_activity").delete().eq("github_repo_id", r.id);
+      const githubReadFailed =
+        prs === null || issues === null || commits === null || repoMeta === null;
 
-      const { error: insertError } = await supabase.from("github_activity").insert({
-        github_repo_id: r.id,
-        user_id: userId,
-        open_prs: openPrs,
-        review_requested_prs: reviewRequested,
-        review_requested_pr_details: reviewRequestedPrDetails,
-        assigned_issues: assignedIssues,
-        assigned_issue_details: assignedIssueDetails,
-        total_issues: totalIssues,
-        latest_commit_at: latestCommit.at,
-        latest_commit_message: latestCommit.message,
-        synced_at: new Date().toISOString(),
-      });
+      if (githubReadFailed) {
+        results.push({
+          repoId: r.id,
+          error: "GitHub API sync failed; previous snapshot preserved",
+        });
+        continue;
+      }
 
-      if (insertError) {
-        results.push({ repoId: r.id, error: insertError.message });
+      const { error: upsertError } = await supabase.from("github_activity").upsert(
+        {
+          github_repo_id: r.id,
+          user_id: userId,
+          open_prs: openPrs,
+          review_requested_prs: reviewRequested,
+          review_requested_pr_details: reviewRequestedPrDetails,
+          assigned_issues: assignedIssues,
+          assigned_issue_details: assignedIssueDetails,
+          total_issues: totalIssues,
+          latest_commit_at: latestCommit.at,
+          latest_commit_message: latestCommit.message,
+          synced_at: new Date().toISOString(),
+        },
+        { onConflict: "github_repo_id" },
+      );
+
+      if (upsertError) {
+        results.push({ repoId: r.id, error: upsertError.message });
       } else {
         results.push({
           repoId: r.id,

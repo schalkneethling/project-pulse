@@ -1,4 +1,5 @@
 import { useReducer, useState } from "react";
+import { safeHttpUrl } from "../../lib/linkify";
 import { IconPlus } from "../icons";
 
 const emptyForm = { title: "", who: "", source: "", sourceUrl: "", dueDate: "" };
@@ -26,11 +27,17 @@ export function WorkItemForm({ onCreate, compact = false }) {
     setSubmitting(true);
     setSubmitError(null);
     try {
+      const normalizedSourceUrl = safeHttpUrl(form.sourceUrl);
+      if (form.sourceUrl.trim() && !normalizedSourceUrl) {
+        setSubmitError("Source link must be a valid http or https URL.");
+        return;
+      }
+
       await onCreate({
         title: form.title.trim(),
         who: form.who.trim() || undefined,
         source: form.source.trim() || undefined,
-        sourceUrl: form.sourceUrl.trim() || undefined,
+        sourceUrl: normalizedSourceUrl || undefined,
         dueDate: form.dueDate || undefined,
       });
       dispatch({ type: "RESET" });

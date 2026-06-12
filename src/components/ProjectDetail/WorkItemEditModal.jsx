@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { WORK_STATUS, WORK_STATUS_ORDER } from "../../lib/constants";
+import { safeHttpUrl } from "../../lib/linkify";
 
 const FIELDS = ["title", "who", "source", "sourceUrl", "dueDate", "status"];
 
@@ -41,10 +42,21 @@ export function WorkItemEditModal({ item, onSave, onClose }) {
     e.preventDefault();
     if (!form.title.trim() || saving) return;
 
+    const normalizedSourceUrl = safeHttpUrl(form.sourceUrl);
+    if (form.sourceUrl.trim() && !normalizedSourceUrl) {
+      setError("Source link must be a valid http or https URL.");
+      return;
+    }
+
     const updates = {};
     for (const f of FIELDS) {
       const current = item[f] ?? (f === "status" ? "todo" : "");
-      const next = f === "title" ? form.title.trim() : form[f];
+      const next =
+        f === "title"
+          ? form.title.trim()
+          : f === "sourceUrl"
+            ? normalizedSourceUrl
+            : form[f];
       const normalized = next === "" ? null : next;
       const normalizedCurrent = current === "" ? null : current;
       if (normalized !== normalizedCurrent) {

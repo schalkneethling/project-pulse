@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { WORK_ITEM_STATUSES } from "../lib/constants";
+import { safeHttpUrl } from "../lib/linkify";
 import { supabase } from "../lib/supabase";
 
 function normalizeWorkStatus(status) {
@@ -9,6 +10,17 @@ function normalizeWorkStatus(status) {
 function failTaskMutation(error, label) {
   console.error(label, error);
   throw error;
+}
+
+function toDbSourceUrl(value) {
+  if (value == null) return null;
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  const normalized = safeHttpUrl(trimmed);
+  if (!normalized) {
+    throw new Error("Source link must be a valid http or https URL.");
+  }
+  return normalized;
 }
 
 /**
@@ -154,7 +166,7 @@ export function useProjects(userId) {
       if (typeof fields === "object" && fields !== null) {
         if (fields.who) payload.who = fields.who;
         if (fields.source) payload.source = fields.source;
-        if (fields.sourceUrl) payload.source_url = fields.sourceUrl;
+        if ("sourceUrl" in fields) payload.source_url = toDbSourceUrl(fields.sourceUrl);
         if (fields.dueDate) payload.due_date = fields.dueDate;
         if (fields.status) payload.status = normalizeWorkStatus(fields.status);
       }
@@ -405,7 +417,7 @@ function taskUpdatesToDb(updates) {
   if ("status" in updates) payload.status = normalizeWorkStatus(updates.status);
   if ("who" in updates) payload.who = updates.who;
   if ("source" in updates) payload.source = updates.source;
-  if ("sourceUrl" in updates) payload.source_url = updates.sourceUrl;
+  if ("sourceUrl" in updates) payload.source_url = toDbSourceUrl(updates.sourceUrl);
   if ("dueDate" in updates) payload.due_date = updates.dueDate;
   if ("archivedAt" in updates) payload.archived_at = updates.archivedAt;
   return payload;
@@ -418,7 +430,7 @@ function normalizeTask(t) {
     status: t.status,
     who: t.who ?? null,
     source: t.source ?? null,
-    sourceUrl: t.source_url ?? null,
+    sourceUrl: safeHttpUrl(t.source_url),
     dueDate: t.due_date ?? null,
     archivedAt: t.archived_at ?? null,
     createdAt: t.created_at,
