@@ -1,12 +1,17 @@
-import { useRef, useState } from "react";
-import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const actionButtonClass =
   "px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0";
 
 function ArchiveConfirmDialog({ projectName, onConfirm, onClose }) {
   const dialogRef = useRef(null);
-  useFocusTrap(dialogRef);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, []);
 
   const handleConfirm = () => {
     onConfirm();
@@ -15,12 +20,7 @@ function ArchiveConfirmDialog({ projectName, onConfirm, onClose }) {
 
   return (
     <dialog
-      ref={(node) => {
-        dialogRef.current = node;
-        if (node) {
-          node.showModal();
-        }
-      }}
+      ref={dialogRef}
       onClose={onClose}
       aria-labelledby="archive-project-title"
       className="bg-slate-800 border border-amber-900/40 rounded-2xl p-6 max-w-md w-full space-y-4"
@@ -54,7 +54,13 @@ function ArchiveConfirmDialog({ projectName, onConfirm, onClose }) {
 
 function DeleteConfirmDialog({ projectName, onConfirm, onClose }) {
   const dialogRef = useRef(null);
-  useFocusTrap(dialogRef);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, []);
 
   const handleConfirm = () => {
     onConfirm();
@@ -63,12 +69,7 @@ function DeleteConfirmDialog({ projectName, onConfirm, onClose }) {
 
   return (
     <dialog
-      ref={(node) => {
-        dialogRef.current = node;
-        if (node) {
-          node.showModal();
-        }
-      }}
+      ref={dialogRef}
       onClose={onClose}
       aria-labelledby="delete-project-title"
       className="bg-slate-800 border border-red-900/40 rounded-2xl p-6 max-w-md w-full space-y-4"
@@ -108,6 +109,8 @@ export function ProjectActions({
 }) {
   const [confirmingArchive, setConfirmingArchive] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const closeArchive = useCallback(() => setConfirmingArchive(false), []);
+  const closeDelete = useCallback(() => setConfirmingDelete(false), []);
 
   if (isArchived) {
     return (
@@ -146,7 +149,7 @@ export function ProjectActions({
         <ArchiveConfirmDialog
           projectName={projectName}
           onConfirm={onArchive}
-          onClose={() => setConfirmingArchive(false)}
+          onClose={closeArchive}
         />
       )}
 
@@ -154,7 +157,7 @@ export function ProjectActions({
         <DeleteConfirmDialog
           projectName={projectName}
           onConfirm={onDelete}
-          onClose={() => setConfirmingDelete(false)}
+          onClose={closeDelete}
         />
       )}
     </div>

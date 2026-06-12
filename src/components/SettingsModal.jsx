@@ -1,9 +1,7 @@
 import { useState, useRef } from "react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export function SettingsModal({ onClose, saveTokens, hasNetlifyToken, hasGithubToken }) {
   const dialogRef = useRef(null);
-  useFocusTrap(dialogRef);
 
   const [netlifyToken, setNetlifyToken] = useState("");
   const [githubToken, setGithubToken] = useState("");

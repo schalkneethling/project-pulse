@@ -1,9 +1,7 @@
 import { useState, useRef } from "react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export function NetlifyModal({ netlify, onSave, onClose }) {
   const dialogRef = useRef(null);
-  useFocusTrap(dialogRef);
 
   const [form, setForm] = useState({
     siteId: netlify?.siteId || "",

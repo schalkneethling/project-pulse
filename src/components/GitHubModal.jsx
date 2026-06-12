@@ -1,9 +1,7 @@
 import { useState, useRef } from "react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export function GitHubModal({ github, onSave, onClose }) {
   const dialogRef = useRef(null);
-  useFocusTrap(dialogRef);
 
   const [owner, setOwner] = useState(github?.owner || "");
   const [repo, setRepo] = useState(github?.repo || "");
