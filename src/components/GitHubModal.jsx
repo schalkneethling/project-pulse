@@ -1,7 +1,9 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export function GitHubModal({ github, onSave, onClose }) {
   const dialogRef = useRef(null);
+  useFocusTrap(dialogRef);
 
   const [owner, setOwner] = useState(github?.owner || "");
   const [repo, setRepo] = useState(github?.repo || "");
@@ -16,14 +18,16 @@ export function GitHubModal({ github, onSave, onClose }) {
     onSave({ owner: owner.trim(), repo: repo.trim() });
   };
 
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, []);
+
   return (
     <dialog
-      ref={(node) => {
-        dialogRef.current = node;
-        if (node) {
-          node.showModal();
-        }
-      }}
+      ref={dialogRef}
       onClose={onClose}
       className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full space-y-4"
     >

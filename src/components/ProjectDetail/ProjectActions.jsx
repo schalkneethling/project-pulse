@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 const actionButtonClass =
   "px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0";
 
 function ArchiveConfirmDialog({ projectName, onConfirm, onClose }) {
   const dialogRef = useRef(null);
+  useFocusTrap(dialogRef);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -54,6 +56,7 @@ function ArchiveConfirmDialog({ projectName, onConfirm, onClose }) {
 
 function DeleteConfirmDialog({ projectName, onConfirm, onClose }) {
   const dialogRef = useRef(null);
+  useFocusTrap(dialogRef);
 
   useEffect(() => {
     const dialog = dialogRef.current;
