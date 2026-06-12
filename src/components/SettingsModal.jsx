@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 
 export function SettingsModal({ onClose, saveTokens, hasNetlifyToken, hasGithubToken }) {
@@ -34,14 +34,16 @@ export function SettingsModal({ onClose, saveTokens, hasNetlifyToken, hasGithubT
     }
   };
 
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, []);
+
   return (
     <dialog
-      ref={(node) => {
-        dialogRef.current = node;
-        if (node) {
-          node.showModal();
-        }
-      }}
+      ref={dialogRef}
       onClose={onClose}
       className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto space-y-4"
     >
