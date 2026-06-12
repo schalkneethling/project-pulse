@@ -138,8 +138,8 @@ project-pulse/
 - **tasks** — title, status, who, source, source_url, due_date, archived_at, linked to project
 - **netlify_sites** — site name, URL, Netlify site ID, linked to project (1:1)
 - **netlify_deploys** — state, branch, commit, build time, errors, linked to site
-- **github_repos** — owner, repo, linked to project (1:1)
-- **github_activity** — open PRs, review requests, assigned issues, latest commit, linked to repo
+- **github_repos** — GitHub owner/repo, linked to project (1:1)
+- **github_activity** — GitHub open PRs, review requests, assigned issues, latest commit, linked to repo
 - **user_settings** — Netlify and GitHub API tokens (RLS-protected; presence exposed via boolean flags)
 
 All tables have Row Level Security — users can only access their own data.

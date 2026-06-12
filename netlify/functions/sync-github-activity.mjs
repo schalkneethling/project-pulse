@@ -111,6 +111,7 @@ export default async (request) => {
       const separator = url.includes("?") ? "&" : "?";
       const pageData = await ghFetch(`${url}${separator}page=${page}`);
 
+      if (pageData === null) return null;
       if (!Array.isArray(pageData) || pageData.length === 0) break;
 
       results.push(...pageData);
@@ -175,6 +176,17 @@ export default async (request) => {
               message: commits[0].commit?.message || null,
             }
           : { at: null, message: null };
+
+      const githubReadFailed =
+        prs === null || issues === null || commits === null || repoMeta === null;
+
+      if (githubReadFailed) {
+        results.push({
+          repoId: r.id,
+          error: "GitHub API sync failed; previous snapshot preserved",
+        });
+        continue;
+      }
 
       const { error: upsertError } = await supabase.from("github_activity").upsert(
         {
