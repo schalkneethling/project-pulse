@@ -13,8 +13,10 @@ function failTaskMutation(error, label) {
 }
 
 function toDbSourceUrl(value) {
-  if (value == null || value === "") return null;
-  const normalized = safeHttpUrl(value);
+  if (value == null) return null;
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  const normalized = safeHttpUrl(trimmed);
   if (!normalized) {
     throw new Error("Source link must be a valid http or https URL.");
   }
