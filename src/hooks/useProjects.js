@@ -6,6 +6,11 @@ function normalizeWorkStatus(status) {
   return WORK_ITEM_STATUSES.has(status) ? status : "todo";
 }
 
+function failTaskMutation(error, label) {
+  console.error(label, error);
+  throw error;
+}
+
 /**
  * Fetches all projects for the current user, including their tasks
  * and linked Netlify site/deploy data.
@@ -153,10 +158,7 @@ export function useProjects(userId) {
 
       const { data, error } = await supabase.from("tasks").insert(payload).select().single();
 
-      if (error) {
-        console.error("Add task error:", error);
-        return null;
-      }
+      if (error) failTaskMutation(error, "Add task error:");
 
       const task = normalizeTask(data);
 
@@ -181,23 +183,23 @@ export function useProjects(userId) {
         payload.updated_at = new Date().toISOString();
       }
 
-      const { error } = await supabase.from("tasks").update(payload).eq("id", taskId);
+      const { data, error } = await supabase
+        .from("tasks")
+        .update(payload)
+        .eq("id", taskId)
+        .select()
+        .single();
 
-      if (error) {
-        console.error("Update task error:", error);
-        throw new Error(error.message || "Could not update work item.");
-      }
+      if (error) failTaskMutation(error, "Update task error:");
 
-      const normalized = taskUpdatesToUi(updates);
+      const task = normalizeTask(data);
 
       setProjects((prev) =>
         prev.map((p) =>
           p.id === projectId
             ? {
                 ...p,
-                tasks: p.tasks.map((t) =>
-                  t.id === taskId ? { ...t, ...normalized, updatedAt: new Date().toISOString() } : t,
-                ),
+                tasks: p.tasks.map((t) => (t.id === taskId ? task : t)),
                 updatedAt: new Date().toISOString(),
               }
             : p,
@@ -205,7 +207,7 @@ export function useProjects(userId) {
       );
 
       await touchProject(projectId);
-      return true;
+      return task;
     },
     [touchProject],
   );
@@ -214,10 +216,7 @@ export function useProjects(userId) {
     async (projectId, taskId) => {
       const { error } = await supabase.from("tasks").delete().eq("id", taskId);
 
-      if (error) {
-        console.error("Delete task error:", error);
-        return;
-      }
+      if (error) failTaskMutation(error, "Delete task error:");
 
       setProjects((prev) =>
         prev.map((p) =>
@@ -239,14 +238,14 @@ export function useProjects(userId) {
   const archiveTask = useCallback(
     async (projectId, taskId) => {
       const now = new Date().toISOString();
-      await updateTask(projectId, taskId, { archivedAt: now });
+      return updateTask(projectId, taskId, { archivedAt: now });
     },
     [updateTask],
   );
 
   const unarchiveTask = useCallback(
     async (projectId, taskId) => {
-      await updateTask(projectId, taskId, { archivedAt: null });
+      return updateTask(projectId, taskId, { archivedAt: null });
     },
     [updateTask],
   );
@@ -407,14 +406,6 @@ function taskUpdatesToDb(updates) {
   if ("dueDate" in updates) payload.due_date = updates.dueDate;
   if ("archivedAt" in updates) payload.archived_at = updates.archivedAt;
   return payload;
-}
-
-function taskUpdatesToUi(updates) {
-  const ui = { ...updates };
-  if ("sourceUrl" in updates) {
-    ui.sourceUrl = updates.sourceUrl;
-  }
-  return ui;
 }
 
 function normalizeTask(t) {
