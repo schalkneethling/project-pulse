@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { linkify } from "./linkify";
+import { linkify, safeHttpUrl } from "./linkify";
 
 describe("linkify", () => {
   it("returns plain text as a single text segment", () => {
@@ -58,5 +58,28 @@ describe("linkify", () => {
   it("does not match URLs without protocol", () => {
     const result = linkify("visit example.com today");
     expect(result).toEqual([{ type: "text", value: "visit example.com today", start: 0 }]);
+  });
+});
+
+describe("safeHttpUrl", () => {
+  it("accepts http and https URLs", () => {
+    expect(safeHttpUrl("https://example.com/path")).toBe("https://example.com/path");
+    expect(safeHttpUrl("http://example.com")).toBe("http://example.com/");
+  });
+
+  it("trims whitespace", () => {
+    expect(safeHttpUrl("  https://example.com  ")).toBe("https://example.com/");
+  });
+
+  it("rejects non-http protocols", () => {
+    expect(safeHttpUrl("javascript:alert(1)")).toBeNull();
+    expect(safeHttpUrl("data:text/html,hi")).toBeNull();
+  });
+
+  it("rejects bare hostnames and invalid strings", () => {
+    expect(safeHttpUrl("example.com")).toBeNull();
+    expect(safeHttpUrl("not a url")).toBeNull();
+    expect(safeHttpUrl("")).toBeNull();
+    expect(safeHttpUrl(null)).toBeNull();
   });
 });

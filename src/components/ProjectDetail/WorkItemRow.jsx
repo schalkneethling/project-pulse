@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { linkify } from "../../lib/linkify";
+import { linkify, safeHttpUrl } from "../../lib/linkify";
 import { getDueState, formatDateKey } from "../../lib/dueDate";
 import { WORK_STATUS } from "../../lib/constants";
 import { IconCheck, IconTrash } from "../icons";
@@ -26,6 +26,7 @@ export function WorkItemRow({
   const { id, title, who, source, sourceUrl, status, dueDate } = item;
   const dueState = getDueState(dueDate, status);
   const segments = linkify(title);
+  const safeSourceUrl = safeHttpUrl(sourceUrl);
   const meta = WORK_STATUS[status] || WORK_STATUS.todo;
   const borderClass = archived
     ? "border-slate-700/30 opacity-70"
@@ -69,8 +70,13 @@ export function WorkItemRow({
               {who && <span>Who: {who}</span>}
               {source && (
                 <span>
-                  {sourceUrl ? (
-                    <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
+                  {safeSourceUrl ? (
+                    <a
+                      href={safeSourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={LINK_CLASS}
+                    >
                       {source}
                     </a>
                   ) : (

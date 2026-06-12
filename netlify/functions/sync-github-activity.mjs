@@ -176,25 +176,25 @@ export default async (request) => {
             }
           : { at: null, message: null };
 
-      // Delete old activity for this repo, then insert fresh snapshot
-      await supabase.from("github_activity").delete().eq("github_repo_id", r.id);
+      const { error: upsertError } = await supabase.from("github_activity").upsert(
+        {
+          github_repo_id: r.id,
+          user_id: userId,
+          open_prs: openPrs,
+          review_requested_prs: reviewRequested,
+          review_requested_pr_details: reviewRequestedPrDetails,
+          assigned_issues: assignedIssues,
+          assigned_issue_details: assignedIssueDetails,
+          total_issues: totalIssues,
+          latest_commit_at: latestCommit.at,
+          latest_commit_message: latestCommit.message,
+          synced_at: new Date().toISOString(),
+        },
+        { onConflict: "github_repo_id" },
+      );
 
-      const { error: insertError } = await supabase.from("github_activity").insert({
-        github_repo_id: r.id,
-        user_id: userId,
-        open_prs: openPrs,
-        review_requested_prs: reviewRequested,
-        review_requested_pr_details: reviewRequestedPrDetails,
-        assigned_issues: assignedIssues,
-        assigned_issue_details: assignedIssueDetails,
-        total_issues: totalIssues,
-        latest_commit_at: latestCommit.at,
-        latest_commit_message: latestCommit.message,
-        synced_at: new Date().toISOString(),
-      });
-
-      if (insertError) {
-        results.push({ repoId: r.id, error: insertError.message });
+      if (upsertError) {
+        results.push({ repoId: r.id, error: upsertError.message });
       } else {
         results.push({
           repoId: r.id,

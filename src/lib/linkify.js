@@ -1,5 +1,21 @@
 const URL_RE = /https?:\/\/[^\s]+/g;
 
+/** Returns a normalized http(s) URL, or null if the value is missing or unsafe. */
+export function safeHttpUrl(raw) {
+  if (!raw || typeof raw !== "string") return null;
+
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.href;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Splits a string into text and link segments.
  * Returns an array of { type: "text" | "link", value: string, start: number }

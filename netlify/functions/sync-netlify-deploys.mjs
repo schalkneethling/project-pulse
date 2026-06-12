@@ -139,13 +139,12 @@ export default async (request) => {
         published_at: d.published_at || null,
       };
 
-      // Delete old deploys for this site, then insert the latest
-      await supabase.from("netlify_deploys").delete().eq("netlify_site_id", site.id);
+      const { error: upsertError } = await supabase
+        .from("netlify_deploys")
+        .upsert(deployPayload, { onConflict: "netlify_site_id" });
 
-      const { error: insertError } = await supabase.from("netlify_deploys").insert(deployPayload);
-
-      if (insertError) {
-        results.push({ siteId: site.id, error: insertError.message });
+      if (upsertError) {
+        results.push({ siteId: site.id, error: upsertError.message });
       } else {
         results.push({ siteId: site.id, state, branch: deployPayload.branch });
       }
