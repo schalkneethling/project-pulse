@@ -15,16 +15,39 @@ export function WorkSection({
 }) {
   const [showDone, setShowDone] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [mutationError, setMutationError] = useState(null);
 
   const groups = groupWorkItems(project.tasks);
   const visibleStatuses = WORK_STATUS_ORDER.filter((s) => s !== "done");
 
+  async function runMutation(fn) {
+    setMutationError(null);
+    try {
+      await fn();
+    } catch (err) {
+      console.error(err);
+      setMutationError(err?.message || "Could not update work item.");
+    }
+  }
+
   const handleAdvance = (taskId, nextStatus) => {
-    onUpdate(taskId, { status: nextStatus });
+    void runMutation(() => onUpdate(taskId, { status: nextStatus }));
   };
 
   const handleBlock = (taskId) => {
-    onUpdate(taskId, { status: "blocked" });
+    void runMutation(() => onUpdate(taskId, { status: "blocked" }));
+  };
+
+  const handleArchive = (taskId) => {
+    void runMutation(() => onArchive(taskId));
+  };
+
+  const handleUnarchive = (taskId) => {
+    void runMutation(() => onUnarchive(taskId));
+  };
+
+  const handleDelete = (taskId) => {
+    void runMutation(() => onDelete(taskId));
   };
 
   return (
@@ -33,6 +56,12 @@ export function WorkSection({
       <p className="text-xs text-slate-500 mb-4">What moves this project forward</p>
 
       <WorkItemForm onCreate={onAdd} compact />
+
+      {mutationError && (
+        <p role="alert" className="mt-3 text-sm text-red-400">
+          {mutationError}
+        </p>
+      )}
 
       <div className="mt-4 space-y-4">
         {visibleStatuses.map((status) => {
@@ -52,8 +81,8 @@ export function WorkSection({
                     onAdvance={handleAdvance}
                     onBlock={handleBlock}
                     onEdit={onEdit}
-                    onArchive={onArchive}
-                    onDelete={onDelete}
+                    onArchive={handleArchive}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>
@@ -77,8 +106,8 @@ export function WorkSection({
                     key={item.id}
                     item={item}
                     onEdit={onEdit}
-                    onArchive={onArchive}
-                    onDelete={onDelete}
+                    onArchive={handleArchive}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>
@@ -102,8 +131,8 @@ export function WorkSection({
                     key={item.id}
                     item={item}
                     archived
-                    onUnarchive={onUnarchive}
-                    onDelete={onDelete}
+                    onUnarchive={handleUnarchive}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>

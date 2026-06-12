@@ -144,12 +144,10 @@ export function ProjectDetail({
       <WorkSection
         project={project}
         onAdd={(fields) => actions.addTask(project.id, fields)}
-        onUpdate={(taskId, updates) =>
-          actions.updateTask(project.id, taskId, updates).catch(console.error)
-        }
-        onArchive={(taskId) => actions.archiveTask(project.id, taskId).catch(console.error)}
-        onUnarchive={(taskId) => actions.unarchiveTask(project.id, taskId).catch(console.error)}
-        onDelete={(taskId) => actions.deleteTask(project.id, taskId).catch(console.error)}
+        onUpdate={(taskId, updates) => actions.updateTask(project.id, taskId, updates)}
+        onArchive={(taskId) => actions.archiveTask(project.id, taskId)}
+        onUnarchive={(taskId) => actions.unarchiveTask(project.id, taskId)}
+        onDelete={(taskId) => actions.deleteTask(project.id, taskId)}
         onEdit={setEditingItem}
       />
 
