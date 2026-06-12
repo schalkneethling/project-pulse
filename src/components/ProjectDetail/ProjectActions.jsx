@@ -1,4 +1,103 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
+
+const actionButtonClass =
+  "px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0";
+
+function ArchiveConfirmDialog({ projectName, onConfirm, onClose }) {
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef);
+
+  const handleConfirm = () => {
+    onConfirm();
+    dialogRef.current?.close();
+  };
+
+  return (
+    <dialog
+      ref={(node) => {
+        dialogRef.current = node;
+        if (node) {
+          node.showModal();
+        }
+      }}
+      onClose={onClose}
+      aria-labelledby="archive-project-title"
+      className="bg-slate-800 border border-amber-900/40 rounded-2xl p-6 max-w-md w-full space-y-4"
+    >
+      <h2 id="archive-project-title" className="text-lg font-semibold text-amber-200">
+        Archive project
+      </h2>
+      <p className="text-sm text-amber-200/90">
+        Archive &ldquo;{projectName || "this project"}&rdquo;? It will be hidden from your overview
+        and project list.
+      </p>
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => dialogRef.current?.close()}
+          className={`${actionButtonClass} bg-slate-700 hover:bg-slate-600 text-slate-200`}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          className={`${actionButtonClass} bg-amber-700 hover:bg-amber-600 text-white`}
+        >
+          Archive
+        </button>
+      </div>
+    </dialog>
+  );
+}
+
+function DeleteConfirmDialog({ projectName, onConfirm, onClose }) {
+  const dialogRef = useRef(null);
+  useFocusTrap(dialogRef);
+
+  const handleConfirm = () => {
+    onConfirm();
+    dialogRef.current?.close();
+  };
+
+  return (
+    <dialog
+      ref={(node) => {
+        dialogRef.current = node;
+        if (node) {
+          node.showModal();
+        }
+      }}
+      onClose={onClose}
+      aria-labelledby="delete-project-title"
+      className="bg-slate-800 border border-red-900/40 rounded-2xl p-6 max-w-md w-full space-y-4"
+    >
+      <h2 id="delete-project-title" className="text-lg font-semibold text-red-300">
+        Delete project
+      </h2>
+      <p className="text-sm text-red-300">
+        Permanently delete &ldquo;{projectName || "this project"}&rdquo;? This cannot be undone.
+      </p>
+      <div className="flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => dialogRef.current?.close()}
+          className={`${actionButtonClass} bg-slate-700 hover:bg-slate-600 text-slate-200`}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleConfirm}
+          className={`${actionButtonClass} bg-red-600 hover:bg-red-500 text-white`}
+        >
+          Delete project
+        </button>
+      </div>
+    </dialog>
+  );
+}
 
 export function ProjectActions({
   projectName,
@@ -25,69 +124,38 @@ export function ProjectActions({
   }
 
   return (
-    <div className="border-t border-slate-800 pt-6 space-y-3">
-      {confirmingArchive ? (
-        <div className="flex items-center gap-3 bg-slate-800/60 border border-slate-700/50 rounded-lg p-4">
-          <p className="text-sm text-slate-300 flex-1">
-            Archive &ldquo;{projectName || "this project"}&rdquo;? It will be hidden from your overview
-            and project list.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              onArchive();
-              setConfirmingArchive(false);
-            }}
-            className="px-3 py-1.5 bg-slate-600 hover:bg-slate-500 rounded-lg text-sm font-medium text-white transition-colors"
-          >
-            Archive
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmingArchive(false)}
-            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
+    <div className="border-t border-slate-800 pt-6">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={() => setConfirmingArchive(true)}
-          className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+          className={`${actionButtonClass} border border-amber-800/60 bg-amber-950/40 text-amber-300 hover:bg-amber-900/50 hover:border-amber-700/70 hover:text-amber-200`}
         >
           Archive project
         </button>
-      )}
-
-      {confirmingDelete ? (
-        <div className="flex items-center gap-3 bg-red-950/30 border border-red-900/40 rounded-lg p-4">
-          <p className="text-sm text-red-300 flex-1">
-            Permanently delete &ldquo;{projectName || "this project"}&rdquo;?
-          </p>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-medium text-white transition-colors"
-          >
-            Delete project
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmingDelete(false)}
-            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-slate-300 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
         <button
           type="button"
           onClick={() => setConfirmingDelete(true)}
-          className="text-sm text-slate-600 hover:text-red-400 transition-colors"
+          className={`${actionButtonClass} border border-red-900/60 bg-red-950/40 text-red-400 hover:bg-red-900/50 hover:border-red-700/70 hover:text-red-300`}
         >
           Delete project
         </button>
+      </div>
+
+      {confirmingArchive && (
+        <ArchiveConfirmDialog
+          projectName={projectName}
+          onConfirm={onArchive}
+          onClose={() => setConfirmingArchive(false)}
+        />
+      )}
+
+      {confirmingDelete && (
+        <DeleteConfirmDialog
+          projectName={projectName}
+          onConfirm={onDelete}
+          onClose={() => setConfirmingDelete(false)}
+        />
       )}
     </div>
   );
