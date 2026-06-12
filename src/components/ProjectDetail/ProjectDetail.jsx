@@ -1,21 +1,17 @@
 import { useState, useEffect, useRef, useReducer } from "react";
 import { RETURN_VIEW_LABELS } from "../../lib/constants";
-import { TodoForm } from "../TodoForm";
-import { TodoCard } from "../TodoCard";
-import { TodoEditModal } from "../TodoEditModal";
 import { NetlifyModal } from "../NetlifyModal";
 import { GitHubModal } from "../GitHubModal";
-import { ProjectHeader } from "./ProjectHeader";
-import { ProjectMeta } from "./ProjectMeta";
+import { ProjectOverview } from "./ProjectOverview";
 import { DeployCard } from "./DeployCard";
 import { GitHubCard } from "./GitHubCard";
-import { TasksSection } from "./TasksSection";
-import { DangerZone } from "./DangerZone";
+import { WorkSection } from "./WorkSection";
+import { WorkItemEditModal } from "./WorkItemEditModal";
+import { ProjectActions } from "./ProjectActions";
 
 const detailInitial = {
   editingField: null,
   tempValue: "",
-  newTask: "",
   showDelete: false,
   showNetlify: false,
   showGithub: false,
@@ -31,10 +27,6 @@ function detailReducer(state, action) {
       return { ...state, tempValue: action.value };
     case "STOP_EDIT":
       return { ...state, editingField: null };
-    case "SET_NEW_TASK":
-      return { ...state, newTask: action.value };
-    case "CLEAR_NEW_TASK":
-      return { ...state, newTask: "" };
     case "SET_SHOW":
       return { ...state, [action.key]: action.value };
     case "SET_SYNCING":
@@ -46,12 +38,7 @@ function detailReducer(state, action) {
 
 export function ProjectDetail({
   project,
-  projects,
   actions,
-  todos,
-  onCreateTodo,
-  onUpdateTodo,
-  onDeleteTodo,
   onBack,
   returnView,
   hasNetlifyToken,
@@ -60,7 +47,7 @@ export function ProjectDetail({
   onSyncResult,
 }) {
   const [d, dispatch] = useReducer(detailReducer, detailInitial);
-  const [editingTodo, setEditingTodo] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -80,12 +67,6 @@ export function ProjectDetail({
       commitEdit(f);
     }
     if (e.key === "Escape") dispatch({ type: "STOP_EDIT" });
-  };
-
-  const handleAddTask = () => {
-    if (!d.newTask.trim()) return;
-    actions.addTask(project.id, d.newTask.trim());
-    dispatch({ type: "CLEAR_NEW_TASK" });
   };
 
   const handleSyncNetlify = async () => {
@@ -108,45 +89,35 @@ export function ProjectDetail({
     }
   };
 
-  const groups = {
-    in_progress: project.tasks.filter((t) => t.status === "in_progress"),
-    todo: project.tasks.filter((t) => t.status === "todo"),
-    blocked: project.tasks.filter((t) => t.status === "blocked"),
-    done: project.tasks.filter((t) => t.status === "done"),
-  };
-  const gc = {
-    in_progress: "border-blue-900/30",
-    todo: "border-slate-700/50",
-    blocked: "border-red-900/30",
-    done: "border-slate-700/30",
-  };
-
   const returnLabel = RETURN_VIEW_LABELS[returnView] || "overview";
+  const isArchived = !!project.archivedAt;
 
   return (
     <div className="space-y-6">
-      <ProjectHeader
+      {isArchived && (
+        <div className="rounded-lg bg-slate-800/60 border border-slate-700/50 px-4 py-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-slate-400">This project is archived</p>
+          <button
+            type="button"
+            onClick={() => actions.unarchiveProject(project.id)}
+            className="text-sm px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200 transition-colors"
+          >
+            Unarchive
+          </button>
+        </div>
+      )}
+
+      <ProjectOverview
         project={project}
-        editing={d.editingField === "name"}
+        editingField={d.editingField}
         tempValue={d.tempValue}
         returnLabel={returnLabel}
         onBack={onBack}
         onTempChange={(v) => dispatch({ type: "SET_TEMP", value: v })}
-        onStartEdit={() => startEdit("name", project.name)}
-        onCommit={() => commitEdit("name")}
-        onKeyDown={(e) => onKey(e, "name")}
-        inputRef={ref}
-      />
-
-      <ProjectMeta
-        project={project}
-        editingField={d.editingField}
-        tempValue={d.tempValue}
-        onStatusChange={(status) => actions.updateProject(project.id, { status })}
-        onTempChange={(v) => dispatch({ type: "SET_TEMP", value: v })}
         onStartEdit={startEdit}
         onCommit={commitEdit}
         onKeyDown={onKey}
+        onStatusChange={(status) => actions.updateProject(project.id, { status })}
         inputRef={ref}
       />
 
@@ -170,68 +141,36 @@ export function ProjectDetail({
         onOpenSettings={onOpenSettings}
       />
 
-      <TasksSection
+      <WorkSection
         project={project}
-        groups={groups}
-        groupBorders={gc}
-        newTask={d.newTask}
-        onNewTaskChange={(v) => dispatch({ type: "SET_NEW_TASK", value: v })}
-        onAddTask={handleAddTask}
-        onUpdateTask={(taskId, updates) => actions.updateTask(project.id, taskId, updates)}
-        onDeleteTask={(taskId) => actions.deleteTask(project.id, taskId)}
+        onAdd={(fields) => actions.addTask(project.id, fields)}
+        onUpdate={(taskId, updates) => actions.updateTask(project.id, taskId, updates)}
+        onArchive={(taskId) => actions.archiveTask(project.id, taskId)}
+        onUnarchive={(taskId) => actions.unarchiveTask(project.id, taskId)}
+        onDelete={(taskId) => actions.deleteTask(project.id, taskId)}
+        onEdit={setEditingItem}
       />
 
-      <section>
-        <h3 className="text-lg font-semibold text-slate-200 mb-1">Follow-ups</h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Quick captures linked to this project — shown on the global Follow-ups board
-        </p>
-        <TodoForm
-          onCreate={onCreateTodo}
-          projects={projects}
-          defaultProjectId={project.id}
-          compact
-        />
-        {todos?.length > 0 ? (
-          <div className="space-y-3 mt-4">
-            {todos.map((todo) => (
-              <TodoCard
-                key={todo.id}
-                todo={todo}
-                onUpdate={onUpdateTodo}
-                onDelete={onDeleteTodo}
-                onEdit={setEditingTodo}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500 text-center py-4 mt-2">
-            No follow-ups linked yet — add one above
-          </p>
-        )}
-      </section>
-
-      {editingTodo && (
-        <TodoEditModal
-          todo={editingTodo}
-          projects={projects}
+      {editingItem && (
+        <WorkItemEditModal
+          item={editingItem}
           onSave={async (updates) => {
-            await onUpdateTodo(editingTodo.id, updates);
-            setEditingTodo(null);
+            await actions.updateTask(project.id, editingItem.id, updates);
+            setEditingItem(null);
           }}
-          onClose={() => setEditingTodo(null)}
+          onClose={() => setEditingItem(null)}
         />
       )}
 
-      <DangerZone
+      <ProjectActions
         projectName={project.name}
-        confirming={d.showDelete}
-        onConfirm={() => {
+        isArchived={isArchived}
+        onArchive={() => actions.archiveProject(project.id)}
+        onUnarchive={() => actions.unarchiveProject(project.id)}
+        onDelete={() => {
           actions.deleteProject(project.id);
           onBack();
         }}
-        onShow={() => dispatch({ type: "SET_SHOW", key: "showDelete", value: true })}
-        onCancel={() => dispatch({ type: "SET_SHOW", key: "showDelete", value: false })}
       />
 
       {d.showNetlify && (

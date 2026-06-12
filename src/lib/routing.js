@@ -1,4 +1,4 @@
-const VALID_VIEWS = new Set(["overview", "projects", "todos"]);
+const VALID_VIEWS = new Set(["overview", "projects"]);
 
 export function readViewFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -7,6 +7,10 @@ export function readViewFromUrl() {
 
   if ((viewParam === "project" || viewParam === "detail") && id) {
     return { view: "detail", projectId: id };
+  }
+
+  if (viewParam === "todos") {
+    return { view: "overview", projectId: null };
   }
 
   if (viewParam && VALID_VIEWS.has(viewParam)) {

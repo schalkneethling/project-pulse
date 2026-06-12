@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
+import { WORK_ITEM_STATUSES } from "../lib/constants";
 import { supabase } from "../lib/supabase";
+
+function normalizeWorkStatus(status) {
+  return WORK_ITEM_STATUSES.has(status) ? status : "todo";
+}
+
+function failTaskMutation(error, label) {
+  console.error(label, error);
+  throw error;
+}
 
 /**
  * Fetches all projects for the current user, including their tasks
@@ -10,7 +20,6 @@ export function useProjects(userId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ─── Fetch all projects with relations ───────────────────
   const fetchProjects = useCallback(
     async (signal) => {
       if (!userId) return;
@@ -40,7 +49,6 @@ export function useProjects(userId) {
         setError(fetchError.message);
         console.error("Fetch projects error:", fetchError);
       } else {
-        // Normalize the nested data into a flat-ish structure the UI expects
         const normalized = (data || []).map(normalizeProject);
         setProjects(normalized);
       }
@@ -56,7 +64,13 @@ export function useProjects(userId) {
     return () => controller.abort();
   }, [fetchProjects]);
 
-  // ─── Create project ──────────────────────────────────────
+  const touchProject = useCallback(async (projectId) => {
+    await supabase
+      .from("projects")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", projectId);
+  }, []);
+
   const createProject = useCallback(async () => {
     const { data, error } = await supabase
       .from("projects")
@@ -74,11 +88,8 @@ export function useProjects(userId) {
     return newProject;
   }, [userId]);
 
-  // ─── Update project fields ───────────────────────────────
   const updateProject = useCallback(async (id, updates) => {
-    // Only send db-safe columns, strip out UI-only fields
-    const { tasks: _tasks, netlify: _netlify, ...dbFields } = updates;
-    // Convert camelCase to snake_case for the relevant fields
+    const { tasks: _tasks, netlify: _netlify, github: _github, ...dbFields } = updates;
     const payload = {};
     if ("name" in dbFields) payload.name = dbFields.name;
     if ("description" in dbFields) payload.description = dbFields.description;
@@ -86,6 +97,7 @@ export function useProjects(userId) {
     if ("nextStep" in dbFields) payload.next_step = dbFields.nextStep;
     if ("next_step" in dbFields) payload.next_step = dbFields.next_step;
     if ("sortOrder" in dbFields) payload.sort_order = dbFields.sortOrder;
+    if ("archivedAt" in dbFields) payload.archived_at = dbFields.archivedAt;
 
     const { error } = await supabase.from("projects").update(payload).eq("id", id);
 
@@ -94,7 +106,6 @@ export function useProjects(userId) {
       return;
     }
 
-    // Optimistic update
     setProjects((prev) =>
       prev.map((p) =>
         p.id === id ? { ...p, ...dbFields, updatedAt: new Date().toISOString() } : p,
@@ -102,7 +113,6 @@ export function useProjects(userId) {
     );
   }, []);
 
-  // ─── Delete project ──────────────────────────────────────
   const deleteProject = useCallback(async (id) => {
     const { error } = await supabase.from("projects").delete().eq("id", id);
 
@@ -114,107 +124,134 @@ export function useProjects(userId) {
     setProjects((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
-  // ─── Add task ────────────────────────────────────────────
+  const archiveProject = useCallback(
+    async (id) => {
+      const now = new Date().toISOString();
+      await updateProject(id, { archivedAt: now });
+    },
+    [updateProject],
+  );
+
+  const unarchiveProject = useCallback(
+    async (id) => {
+      await updateProject(id, { archivedAt: null });
+    },
+    [updateProject],
+  );
+
   const addTask = useCallback(
-    async (projectId, title) => {
+    async (projectId, fields) => {
+      const title = typeof fields === "string" ? fields : fields.title;
+      const payload = {
+        project_id: projectId,
+        user_id: userId,
+        title: title.trim(),
+      };
+
+      if (typeof fields === "object" && fields !== null) {
+        if (fields.who) payload.who = fields.who;
+        if (fields.source) payload.source = fields.source;
+        if (fields.sourceUrl) payload.source_url = fields.sourceUrl;
+        if (fields.dueDate) payload.due_date = fields.dueDate;
+        if (fields.status) payload.status = normalizeWorkStatus(fields.status);
+      }
+
+      const { data, error } = await supabase.from("tasks").insert(payload).select().single();
+
+      if (error) failTaskMutation(error, "Add task error:");
+
+      const task = normalizeTask(data);
+
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === projectId
+            ? { ...p, tasks: [...p.tasks, task], updatedAt: new Date().toISOString() }
+            : p,
+        ),
+      );
+
+      await touchProject(projectId);
+      return task;
+    },
+    [userId, touchProject],
+  );
+
+  const updateTask = useCallback(
+    async (projectId, taskId, updates) => {
+      const payload = taskUpdatesToDb(updates);
+      if (Object.keys(payload).length > 0) {
+        payload.updated_at = new Date().toISOString();
+      }
+
       const { data, error } = await supabase
         .from("tasks")
-        .insert({ project_id: projectId, user_id: userId, title })
+        .update(payload)
+        .eq("id", taskId)
         .select()
         .single();
 
-      if (error) {
-        console.error("Add task error:", error);
-        return;
-      }
+      if (error) failTaskMutation(error, "Update task error:");
+
+      const task = normalizeTask(data);
 
       setProjects((prev) =>
         prev.map((p) =>
           p.id === projectId
             ? {
                 ...p,
-                tasks: [
-                  ...p.tasks,
-                  {
-                    id: data.id,
-                    title: data.title,
-                    status: data.status,
-                    createdAt: data.created_at,
-                  },
-                ],
+                tasks: p.tasks.map((t) => (t.id === taskId ? task : t)),
                 updatedAt: new Date().toISOString(),
               }
             : p,
         ),
       );
 
-      // Also touch the project's updated_at
-      await supabase
-        .from("projects")
-        .update({ updated_at: new Date().toISOString() })
-        .eq("id", projectId);
+      await touchProject(projectId);
+      return task;
     },
-    [userId],
+    [touchProject],
   );
 
-  // ─── Update task status ──────────────────────────────────
-  const updateTask = useCallback(async (projectId, taskId, updates) => {
-    const { error } = await supabase.from("tasks").update(updates).eq("id", taskId);
+  const deleteTask = useCallback(
+    async (projectId, taskId) => {
+      const { error } = await supabase.from("tasks").delete().eq("id", taskId);
 
-    if (error) {
-      console.error("Update task error:", error);
-      return;
-    }
+      if (error) failTaskMutation(error, "Delete task error:");
 
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              tasks: p.tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t)),
-              updatedAt: new Date().toISOString(),
-            }
-          : p,
-      ),
-    );
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                tasks: p.tasks.filter((t) => t.id !== taskId),
+                updatedAt: new Date().toISOString(),
+              }
+            : p,
+        ),
+      );
 
-    await supabase
-      .from("projects")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", projectId);
-  }, []);
+      await touchProject(projectId);
+    },
+    [touchProject],
+  );
 
-  // ─── Delete task ─────────────────────────────────────────
-  const deleteTask = useCallback(async (projectId, taskId) => {
-    const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+  const archiveTask = useCallback(
+    async (projectId, taskId) => {
+      const now = new Date().toISOString();
+      return updateTask(projectId, taskId, { archivedAt: now });
+    },
+    [updateTask],
+  );
 
-    if (error) {
-      console.error("Delete task error:", error);
-      return;
-    }
+  const unarchiveTask = useCallback(
+    async (projectId, taskId) => {
+      return updateTask(projectId, taskId, { archivedAt: null });
+    },
+    [updateTask],
+  );
 
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              tasks: p.tasks.filter((t) => t.id !== taskId),
-              updatedAt: new Date().toISOString(),
-            }
-          : p,
-      ),
-    );
-
-    await supabase
-      .from("projects")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", projectId);
-  }, []);
-
-  // ─── Save Netlify site link ──────────────────────────────
   const saveNetlifySite = useCallback(
     async (projectId, netlifyData) => {
-      // Upsert the netlify_sites row
       const sitePayload = {
         project_id: projectId,
         user_id: userId,
@@ -223,7 +260,6 @@ export function useProjects(userId) {
         site_url: netlifyData.url || "",
       };
 
-      // Check if one exists already
       const { data: existing } = await supabase
         .from("netlify_sites")
         .select("id")
@@ -244,11 +280,9 @@ export function useProjects(userId) {
         siteId = created?.id;
       }
 
-      // Save the deploy snapshot
       if (siteId && netlifyData.lastDeploy) {
         const deploy = netlifyData.lastDeploy;
 
-        // Delete old deploys for this site (we keep latest only for now)
         await supabase.from("netlify_deploys").delete().eq("netlify_site_id", siteId);
 
         await supabase.from("netlify_deploys").insert({
@@ -263,21 +297,17 @@ export function useProjects(userId) {
         });
       }
 
-      // Re-fetch to get clean state
       await fetchProjects();
     },
     [userId, fetchProjects],
   );
 
-  // ─── Remove Netlify site link ────────────────────────────
   const removeNetlifySite = useCallback(async (projectId) => {
-    // Cascade will handle deploys
     await supabase.from("netlify_sites").delete().eq("project_id", projectId);
 
     setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, netlify: null } : p)));
   }, []);
 
-  // ─── Save GitHub repo link ──────────────────────────────
   const saveGithubRepo = useCallback(
     async (projectId, { owner, repo }) => {
       const payload = {
@@ -304,14 +334,12 @@ export function useProjects(userId) {
     [userId, fetchProjects],
   );
 
-  // ─── Remove GitHub repo link ────────────────────────────
   const removeGithubRepo = useCallback(async (projectId) => {
     await supabase.from("github_repos").delete().eq("project_id", projectId);
 
     setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, github: null } : p)));
   }, []);
 
-  // ─── Sync Netlify deploys via serverless function ───────
   const syncNetlifyDeploys = useCallback(async () => {
     const {
       data: { session },
@@ -328,7 +356,6 @@ export function useProjects(userId) {
     return result;
   }, [fetchProjects]);
 
-  // ─── Sync GitHub activity via serverless function ───────
   const syncGithubActivity = useCallback(async () => {
     const {
       data: { session },
@@ -352,9 +379,13 @@ export function useProjects(userId) {
     createProject,
     updateProject,
     deleteProject,
+    archiveProject,
+    unarchiveProject,
     addTask,
     updateTask,
     deleteTask,
+    archiveTask,
+    unarchiveTask,
     saveNetlifySite,
     removeNetlifySite,
     saveGithubRepo,
@@ -365,14 +396,35 @@ export function useProjects(userId) {
   };
 }
 
-// ─── Normalize DB row to UI shape ────────────────────────────
-function normalizeProject(row) {
-  const tasks = (row.tasks || []).map((t) => ({
+function taskUpdatesToDb(updates) {
+  const payload = {};
+  if ("title" in updates) payload.title = updates.title;
+  if ("status" in updates) payload.status = normalizeWorkStatus(updates.status);
+  if ("who" in updates) payload.who = updates.who;
+  if ("source" in updates) payload.source = updates.source;
+  if ("sourceUrl" in updates) payload.source_url = updates.sourceUrl;
+  if ("dueDate" in updates) payload.due_date = updates.dueDate;
+  if ("archivedAt" in updates) payload.archived_at = updates.archivedAt;
+  return payload;
+}
+
+function normalizeTask(t) {
+  return {
     id: t.id,
     title: t.title,
     status: t.status,
+    who: t.who ?? null,
+    source: t.source ?? null,
+    sourceUrl: t.source_url ?? null,
+    dueDate: t.due_date ?? null,
+    archivedAt: t.archived_at ?? null,
     createdAt: t.created_at,
-  }));
+    updatedAt: t.updated_at ?? t.created_at,
+  };
+}
+
+function normalizeProject(row) {
+  const tasks = (row.tasks || []).map(normalizeTask);
 
   let netlify = null;
   const site = Array.isArray(row.netlify_sites) ? row.netlify_sites[0] : row.netlify_sites;
@@ -438,6 +490,7 @@ function normalizeProject(row) {
     status: row.status,
     nextStep: row.next_step,
     sortOrder: row.sort_order,
+    archivedAt: row.archived_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     tasks,
