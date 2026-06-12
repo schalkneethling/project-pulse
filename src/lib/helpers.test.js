@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { daysSince, fmtDate, fmtDuration, timeAgo } from "./helpers";
+import { daysSince, fmtDate, fmtDuration, timeAgo, lastActivityAt } from "./helpers";
 
 describe("daysSince", () => {
   afterEach(() => vi.useRealTimers());
@@ -21,6 +21,26 @@ describe("daysSince", () => {
     expect(daysSince("2026-04-04T12:00:00Z")).toBe(1);
     expect(daysSince("2026-03-29T12:00:00Z")).toBe(7);
     expect(daysSince("2026-03-06T12:00:00Z")).toBe(30);
+  });
+});
+
+describe("lastActivityAt", () => {
+  it("returns null when no activity dates exist", () => {
+    expect(lastActivityAt({})).toBeNull();
+    expect(lastActivityAt(null)).toBeNull();
+  });
+
+  it("returns the most recent date across sources", () => {
+    const project = {
+      updatedAt: "2026-01-01T00:00:00Z",
+      github: { activity: { latestCommitAt: "2026-06-12T10:00:00Z" } },
+      netlify: { lastDeploy: { publishedAt: "2026-03-01T00:00:00Z" } },
+    };
+    expect(lastActivityAt(project)).toBe("2026-06-12T10:00:00Z");
+  });
+
+  it("falls back to updatedAt when no integrations are linked", () => {
+    expect(lastActivityAt({ updatedAt: "2026-04-01T00:00:00Z" })).toBe("2026-04-01T00:00:00Z");
   });
 });
 

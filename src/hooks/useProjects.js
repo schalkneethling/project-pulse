@@ -99,6 +99,11 @@ export function useProjects(userId) {
     if ("sortOrder" in dbFields) payload.sort_order = dbFields.sortOrder;
     if ("archivedAt" in dbFields) payload.archived_at = dbFields.archivedAt;
 
+    if (Object.keys(payload).length === 0) return;
+
+    const now = new Date().toISOString();
+    payload.updated_at = now;
+
     const { error } = await supabase.from("projects").update(payload).eq("id", id);
 
     if (error) {
@@ -107,9 +112,7 @@ export function useProjects(userId) {
     }
 
     setProjects((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, ...dbFields, updatedAt: new Date().toISOString() } : p,
-      ),
+      prev.map((p) => (p.id === id ? { ...p, ...dbFields, updatedAt: now } : p)),
     );
   }, []);
 

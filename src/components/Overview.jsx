@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { daysSince } from "../lib/helpers";
+import { daysSince, lastActivityAt } from "../lib/helpers";
 import { getDueState, formatDateKey } from "../lib/dueDate";
 import { DEPLOY_STATUS } from "../lib/constants";
 import { visibleProjects, archivedProjects, activeWorkItems } from "../lib/workItems";
@@ -37,7 +37,9 @@ export function Overview({
 
   const active = visible.filter((p) => p.status === "active");
   const blocked = visible.filter((p) => p.status === "blocked");
-  const stale = visible.filter((p) => p.status === "active" && daysSince(p.updatedAt) >= 7);
+  const stale = visible.filter(
+    (p) => p.status === "active" && daysSince(lastActivityAt(p)) >= 7,
+  );
 
   const tasksWithProject = visible.flatMap((p) =>
     activeWorkItems(p.tasks).map((t) => ({ ...t, pName: p.name, pId: p.id })),
@@ -54,12 +56,7 @@ export function Overview({
   });
   const reviewPRs = visible.filter((p) => p.github?.activity?.reviewRequestedPrs > 0);
   const assignedIssues = visible.filter((p) => p.github?.activity?.assignedIssues > 0);
-  const ghStale = visible.filter((p) => {
-    if (!p.github?.activity?.latestCommitAt || p.status !== "active") return false;
-    return daysSince(p.github.activity.latestCommitAt) >= 7;
-  });
-
-  const staleProjects = [...new Map([...stale, ...ghStale].map((p) => [p.id, p])).values()];
+  const staleProjects = stale;
 
   const dueSoon = tasksWithProject
     .filter((t) => isDueSoonTask(t))
@@ -300,7 +297,7 @@ export function Overview({
                   <span className="font-medium text-slate-200">{p.name}</span>
                   <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={p.status} />
-                    <Stale updatedAt={p.updatedAt} />
+                    <Stale project={p} />
                   </div>
                 </div>
                 <p className="mt-1 text-sm text-slate-400">{p.nextStep}</p>
@@ -358,7 +355,7 @@ export function Overview({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium text-slate-200">{p.name}</span>
-                  <Stale updatedAt={p.updatedAt} />
+                  <Stale project={p} />
                 </div>
                 {p.nextStep && <p className="mt-1 text-sm text-slate-400">Next: {p.nextStep}</p>}
               </button>

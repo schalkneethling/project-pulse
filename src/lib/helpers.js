@@ -7,6 +7,22 @@ const LOCALE = navigator?.languages?.[0] ?? "en-ZA";
 export const daysSince = (d) =>
   d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
 
+/** Latest activity across in-app edits, GitHub commits, and Netlify deploys. */
+export function lastActivityAt(project) {
+  const candidates = [
+    project?.updatedAt,
+    project?.github?.activity?.latestCommitAt,
+    project?.netlify?.lastDeploy?.publishedAt,
+    project?.netlify?.lastDeploy?.createdAt,
+  ].filter(Boolean);
+
+  if (candidates.length === 0) return null;
+
+  return candidates.reduce((latest, d) =>
+    new Date(d).getTime() > new Date(latest).getTime() ? d : latest,
+  );
+}
+
 export const fmtDate = (d) =>
   d
     ? new Date(d).toLocaleDateString(LOCALE, {

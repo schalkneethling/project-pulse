@@ -50,7 +50,7 @@ export function ProjectList({ projects, onSelect }) {
                 )}
                 <DeployBadge netlify={p.netlify} />
                 <GitHubBadge github={p.github} />
-                {!isArchived && <Stale updatedAt={p.updatedAt} />}
+                {!isArchived && <Stale project={p} />}
                 {total > 0 && (
                   <span className="text-xs text-slate-500">
                     {done}/{total} done
