@@ -155,8 +155,8 @@ export function ProjectDetail({
         <WorkItemEditModal
           item={editingItem}
           onSave={async (updates) => {
-            await actions.updateTask(project.id, editingItem.id, updates);
-            setEditingItem(null);
+            const ok = await actions.updateTask(project.id, editingItem.id, updates);
+            if (ok) setEditingItem(null);
           }}
           onClose={() => setEditingItem(null)}
         />

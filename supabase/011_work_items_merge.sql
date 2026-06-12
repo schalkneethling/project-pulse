@@ -40,7 +40,8 @@ INSERT INTO public.tasks (
   source_url,
   due_date,
   created_at,
-  updated_at
+  updated_at,
+  archived_at
 )
 SELECT
   COALESCE(
@@ -65,10 +66,12 @@ SELECT
   b.source_url,
   b.due_date,
   b.created_at,
-  COALESCE(b.updated_at, b.created_at)
-FROM public.breadcrumbs b
-WHERE b.status NOT IN ('done', 'resolved')
-   OR b.created_at >= now() - interval '30 days';
+  COALESCE(b.updated_at, b.created_at),
+  CASE
+    WHEN b.status IN ('done', 'resolved') THEN COALESCE(b.updated_at, b.created_at)
+    ELSE NULL
+  END
+FROM public.breadcrumbs b;
 
 -- ─── Retire breadcrumbs ───────────────────────────────────────
 ALTER TABLE IF EXISTS public.breadcrumbs RENAME TO _breadcrumbs_archive;

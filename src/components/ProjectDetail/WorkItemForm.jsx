@@ -26,13 +26,17 @@ export function WorkItemForm({ onCreate, compact = false }) {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      await onCreate({
+      const result = await onCreate({
         title: form.title.trim(),
         who: form.who.trim() || undefined,
         source: form.source.trim() || undefined,
         sourceUrl: form.sourceUrl.trim() || undefined,
         dueDate: form.dueDate || undefined,
       });
+      if (!result) {
+        setSubmitError("Could not save work item.");
+        return;
+      }
       dispatch({ type: "RESET" });
     } catch (err) {
       setSubmitError(err?.message || "Could not save work item.");

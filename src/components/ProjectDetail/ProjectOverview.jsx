@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { STATUS, DEPLOY_STATUS } from "../../lib/constants";
 import { activeWorkItems } from "../../lib/workItems";
 import { daysSince } from "../../lib/helpers";
@@ -20,6 +20,10 @@ export function ProjectOverview({
   inputRef,
 }) {
   const [descOpen, setDescOpen] = useState(!!project.description);
+
+  useEffect(() => {
+    setDescOpen(!!project.description);
+  }, [project.id, project.description]);
 
   const work = activeWorkItems(project.tasks);
   const counts = {

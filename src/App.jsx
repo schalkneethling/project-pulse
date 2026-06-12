@@ -204,6 +204,7 @@ export default function App() {
               projects={projects}
               onSelect={select}
               onNewProject={handleNew}
+              onViewProjects={() => setView("projects")}
               hasNetlifyToken={hasNetlifyToken}
               hasGithubToken={hasGithubToken}
               onOpenSettings={() => setShowSettings(true)}

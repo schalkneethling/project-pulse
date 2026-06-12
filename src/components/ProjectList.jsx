@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { visibleProjects, archivedProjects, activeWorkItems } from "../lib/workItems";
+import { visibleProjects, archivedProjects } from "../lib/workItems";
 import { StatusBadge, DeployBadge, GitHubBadge, Stale } from "./ui/ProjectBadges";
 
 export function ProjectList({ projects, onSelect }) {
@@ -12,9 +12,9 @@ export function ProjectList({ projects, onSelect }) {
   return (
     <div className="space-y-3">
       {displayed.map((p) => {
-        const tasks = activeWorkItems(p.tasks);
-        const done = (p.tasks ?? []).filter((t) => t.status === "done" && !t.archivedAt).length;
-        const total = tasks.length + done;
+        const nonArchived = (p.tasks ?? []).filter((t) => !t.archivedAt);
+        const done = nonArchived.filter((t) => t.status === "done").length;
+        const total = nonArchived.length;
         const isArchived = !!p.archivedAt;
 
         return (

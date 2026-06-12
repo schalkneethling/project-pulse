@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
+import { WORK_ITEM_STATUSES } from "../lib/constants";
 import { supabase } from "../lib/supabase";
+
+function normalizeWorkStatus(status) {
+  return WORK_ITEM_STATUSES.has(status) ? status : "todo";
+}
 
 /**
  * Fetches all projects for the current user, including their tasks
@@ -143,14 +148,14 @@ export function useProjects(userId) {
         if (fields.source) payload.source = fields.source;
         if (fields.sourceUrl) payload.source_url = fields.sourceUrl;
         if (fields.dueDate) payload.due_date = fields.dueDate;
-        if (fields.status) payload.status = fields.status;
+        if (fields.status) payload.status = normalizeWorkStatus(fields.status);
       }
 
       const { data, error } = await supabase.from("tasks").insert(payload).select().single();
 
       if (error) {
         console.error("Add task error:", error);
-        return;
+        return null;
       }
 
       const task = normalizeTask(data);
@@ -180,7 +185,7 @@ export function useProjects(userId) {
 
       if (error) {
         console.error("Update task error:", error);
-        return;
+        throw new Error(error.message || "Could not update work item.");
       }
 
       const normalized = taskUpdatesToUi(updates);
@@ -200,6 +205,7 @@ export function useProjects(userId) {
       );
 
       await touchProject(projectId);
+      return true;
     },
     [touchProject],
   );
@@ -394,7 +400,7 @@ export function useProjects(userId) {
 function taskUpdatesToDb(updates) {
   const payload = {};
   if ("title" in updates) payload.title = updates.title;
-  if ("status" in updates) payload.status = updates.status;
+  if ("status" in updates) payload.status = normalizeWorkStatus(updates.status);
   if ("who" in updates) payload.who = updates.who;
   if ("source" in updates) payload.source = updates.source;
   if ("sourceUrl" in updates) payload.source_url = updates.sourceUrl;

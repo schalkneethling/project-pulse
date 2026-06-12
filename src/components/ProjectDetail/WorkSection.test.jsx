@@ -34,7 +34,7 @@ describe("WorkSection", () => {
 
   it("calls onAdd when form submitted", async () => {
     const user = userEvent.setup();
-    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const onAdd = vi.fn().mockResolvedValue({ id: "t-new", title: "New item", status: "todo" });
     render(
       <WorkSection
         project={{ ...project, tasks: [] }}

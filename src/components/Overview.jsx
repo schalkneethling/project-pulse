@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { daysSince } from "../lib/helpers";
 import { getDueState, formatDateKey } from "../lib/dueDate";
 import { DEPLOY_STATUS } from "../lib/constants";
-import { visibleProjects, activeWorkItems } from "../lib/workItems";
+import { visibleProjects, archivedProjects, activeWorkItems } from "../lib/workItems";
 import {
   IconRocket,
   IconGithub,
@@ -25,6 +25,7 @@ export function Overview({
   projects,
   onSelect,
   onNewProject,
+  onViewProjects,
   hasNetlifyToken,
   hasGithubToken,
   onOpenSettings,
@@ -32,6 +33,7 @@ export function Overview({
   const sectionRefs = useRef({});
 
   const visible = visibleProjects(projects);
+  const archived = archivedProjects(projects);
 
   const active = visible.filter((p) => p.status === "active");
   const blocked = visible.filter((p) => p.status === "blocked");
@@ -378,6 +380,36 @@ export function Overview({
               Add your first project
             </button>
           )}
+        </div>
+      )}
+
+      {visible.length === 0 && projects.length > 0 && (
+        <div className="text-center py-16 rounded-xl bg-slate-800/40 border border-slate-700/50">
+          <p className="text-lg text-slate-300">All projects are archived</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {archived.length} archived project{archived.length !== 1 ? "s" : ""} — unarchive one from
+            the projects list or start fresh.
+          </p>
+          <div className="mt-4 flex items-center justify-center gap-3">
+            {onViewProjects && (
+              <button
+                type="button"
+                onClick={onViewProjects}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium text-slate-200 transition-colors"
+              >
+                View archived projects
+              </button>
+            )}
+            {onNewProject && (
+              <button
+                type="button"
+                onClick={onNewProject}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium text-white transition-colors"
+              >
+                New project
+              </button>
+            )}
+          </div>
         </div>
       )}
 

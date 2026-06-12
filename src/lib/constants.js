@@ -38,6 +38,8 @@ export const WORK_STATUS = {
 
 export const WORK_STATUS_ORDER = ["in_progress", "todo", "blocked", "done"];
 
+export const WORK_ITEM_STATUSES = new Set(Object.keys(WORK_STATUS));
+
 /** @deprecated use WORK_STATUS */
 export const TASK_STATUS = Object.fromEntries(
   Object.entries(WORK_STATUS).map(([k, v]) => [k, v.label]),
