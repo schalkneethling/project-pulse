@@ -98,20 +98,41 @@ export function Overview({
 
       {visible.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {statCards.map((x, i) => (
-            <button
-              type="button"
-              key={`${x.l}-${i}`}
-              onClick={() => x.section && scrollToSection(x.section)}
-              disabled={x.v === 0}
-              className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-4 text-left hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-default disabled:hover:bg-slate-800/60"
-            >
-              <p className="text-xs text-slate-400 uppercase tracking-wider">
-                {i === 2 ? "Active Work" : x.l}
-              </p>
-              <p className={`mt-1 text-2xl font-bold ${x.c}`}>{x.v}</p>
-            </button>
-          ))}
+          {statCards.map((x, i) => {
+            const label = i === 2 ? "Active Work" : x.l;
+            const baseClass =
+              "rounded-xl bg-slate-800/60 border border-slate-700/50 p-4 text-left";
+            const content = (
+              <>
+                <p className="text-xs text-slate-400 uppercase tracking-wider">{label}</p>
+                <p className={`mt-1 text-2xl font-bold ${x.c}`}>{x.v}</p>
+              </>
+            );
+
+            if (!x.section) {
+              return (
+                <div
+                  key={`${x.l}-${i}`}
+                  aria-disabled="true"
+                  className={`${baseClass} ${x.v === 0 ? "opacity-50 cursor-default" : "cursor-default"}`}
+                >
+                  {content}
+                </div>
+              );
+            }
+
+            return (
+              <button
+                type="button"
+                key={`${x.l}-${i}`}
+                onClick={() => scrollToSection(x.section)}
+                disabled={x.v === 0}
+                className={`${baseClass} hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-default disabled:hover:bg-slate-800/60`}
+              >
+                {content}
+              </button>
+            );
+          })}
         </div>
       )}
 
