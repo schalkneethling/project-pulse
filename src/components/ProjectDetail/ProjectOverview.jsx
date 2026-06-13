@@ -3,6 +3,7 @@ import { activeWorkItems } from "../../lib/workItems";
 import { daysSince } from "../../lib/helpers";
 import { StatusBadge } from "../ui/ProjectBadges";
 import { ProjectHeader } from "./ProjectHeader";
+import { Editable } from "./Editable";
 
 export function ProjectOverview({
   project,
@@ -103,6 +104,20 @@ export function ProjectOverview({
             {ghParts.length > 0 && <span>GitHub: {ghParts.join(" · ")}</span>}
           </div>
         )}
+
+        <Editable
+          field="description"
+          label="Description"
+          value={project.description}
+          multi
+          editing={editingField === "description"}
+          tempValue={tempValue}
+          onTempChange={onTempChange}
+          onStartEdit={onStartEdit}
+          onCommit={onCommit}
+          onKeyDown={onKeyDown}
+          inputRef={inputRef}
+        />
 
         <div className="flex items-center gap-2">
           <StatusBadge status={project.status} />
