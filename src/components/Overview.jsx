@@ -11,11 +11,10 @@ import {
   IconPR,
   IconIssue,
 } from "./icons";
-import { StatusBadge, Stale, DeployBadge, TypeBadge } from "./ui/ProjectBadges";
+import { Stale, DeployBadge, TypeBadge } from "./ui/ProjectBadges";
 import { IntegrationBanner } from "./IntegrationBanner";
 
 const STAT_SECTIONS = {
-  Active: "section-active",
   Blocked: "section-blocked",
   ActiveWork: "section-active-work",
   "Stale (7d+)": "section-stale",
@@ -47,9 +46,6 @@ export function Overview({
   const blockedTasks = tasksWithProject.filter((t) => t.status === "blocked");
   const inProgress = tasksWithProject.filter((t) => t.status === "in_progress");
 
-  const nextSteps = visible.filter(
-    (p) => p.nextStep && (p.status === "active" || p.status === "blocked"),
-  );
   const deployAlerts = visible.filter((p) => {
     const s = p.netlify?.lastDeploy?.state;
     return s === "error" || s === "building";
@@ -75,7 +71,7 @@ export function Overview({
   };
 
   const statCards = [
-    { l: "Active", v: active.length, c: "text-emerald-400", section: STAT_SECTIONS.Active },
+    { l: "Active", v: active.length, c: "text-emerald-400", section: null },
     { l: "Blocked", v: blocked.length + blockedTasks.length, c: "text-red-400", section: STAT_SECTIONS.Blocked },
     { l: "Active", v: inProgress.length, c: "text-blue-400", section: STAT_SECTIONS.ActiveWork },
     {
@@ -218,7 +214,6 @@ export function Overview({
                 className="w-full text-left rounded-lg bg-red-950/30 border border-red-900/40 p-3 hover:bg-red-950/50 transition-colors"
               >
                 <span className="font-medium text-slate-200">{p.name}</span>
-                {p.nextStep && <p className="mt-1 text-sm text-slate-400">Next: {p.nextStep}</p>}
               </button>
             ))}
             {blockedTasks.map((t) => (
@@ -277,36 +272,6 @@ export function Overview({
         </section>
       )}
 
-      {nextSteps.length > 0 && (
-        <section
-          ref={(el) => {
-            sectionRefs.current[STAT_SECTIONS.Active] = el;
-          }}
-        >
-          <h2 className="text-lg font-semibold text-slate-200 mb-1">Next Steps</h2>
-          <p className="text-xs text-slate-500 mb-3">Where to pick up when you sit down with each project</p>
-          <div className="space-y-2">
-            {nextSteps.map((p) => (
-              <button
-                type="button"
-                key={p.id}
-                onClick={() => onSelect(p.id)}
-                className="w-full text-left rounded-lg bg-slate-800/60 border border-slate-700/50 p-3 hover:bg-slate-800 transition-colors"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-slate-200">{p.name}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <StatusBadge status={p.status} />
-                    <Stale project={p} />
-                  </div>
-                </div>
-                <p className="mt-1 text-sm text-slate-400">{p.nextStep}</p>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
       {inProgress.length > 0 && (
         <section
           ref={(el) => {
@@ -357,7 +322,6 @@ export function Overview({
                   <span className="font-medium text-slate-200">{p.name}</span>
                   <Stale project={p} />
                 </div>
-                {p.nextStep && <p className="mt-1 text-sm text-slate-400">Next: {p.nextStep}</p>}
               </button>
             ))}
           </div>
@@ -410,16 +374,16 @@ export function Overview({
         </div>
       )}
 
-      {visible.length > 0 && !hasUrgentSections && nextSteps.length === 0 && inProgress.length === 0 && staleProjects.length === 0 && (
+      {visible.length > 0 && !hasUrgentSections && inProgress.length === 0 && staleProjects.length === 0 && (
         <div className="text-center py-12 rounded-xl bg-slate-800/40 border border-slate-700/50">
           <p className="text-lg text-emerald-400 font-medium">All clear</p>
           <p className="mt-1 text-sm text-slate-400">
-            Nothing urgent — pick a next step from your active projects or add work in project detail.
+            Nothing urgent — add work in project detail or check back later.
           </p>
         </div>
       )}
 
-      {visible.length > 0 && !hasUrgentSections && (nextSteps.length > 0 || inProgress.length > 0) && (
+      {visible.length > 0 && !hasUrgentSections && inProgress.length > 0 && (
         <div className="text-center py-8 text-slate-500 text-sm">
           No urgent alerts — you are caught up on deploys, GitHub, and blockers.
         </div>

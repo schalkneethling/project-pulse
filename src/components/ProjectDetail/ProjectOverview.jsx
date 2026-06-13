@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
 import { STATUS, DEPLOY_STATUS } from "../../lib/constants";
 import { activeWorkItems } from "../../lib/workItems";
 import { daysSince } from "../../lib/helpers";
 import { StatusBadge } from "../ui/ProjectBadges";
 import { ProjectHeader } from "./ProjectHeader";
-import { Editable } from "./Editable";
 
 export function ProjectOverview({
   project,
@@ -19,12 +17,6 @@ export function ProjectOverview({
   onStatusChange,
   inputRef,
 }) {
-  const [descOpen, setDescOpen] = useState(!!project.description);
-
-  useEffect(() => {
-    setDescOpen(!!project.description);
-  }, [project.id, project.description]);
-
   const work = activeWorkItems(project.tasks);
   const counts = {
     next: work.filter((t) => t.status === "todo").length,
@@ -84,24 +76,6 @@ export function ProjectOverview({
           </div>
         </div>
 
-        <div className="rounded-lg bg-slate-900/50 border border-blue-900/30 p-4">
-          <Editable
-            field="nextStep"
-            label="⚡ Next Step"
-            value={project.nextStep}
-            editing={editingField === "nextStep"}
-            tempValue={tempValue}
-            onTempChange={onTempChange}
-            onStartEdit={onStartEdit}
-            onCommit={onCommit}
-            onKeyDown={onKeyDown}
-            inputRef={inputRef}
-          />
-          <p className="text-xs text-slate-500 mt-1 px-3">
-            What should you do when you next sit down with this project?
-          </p>
-        </div>
-
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: "Next", count: counts.next, color: "text-slate-300" },
@@ -128,43 +102,6 @@ export function ProjectOverview({
             )}
             {ghParts.length > 0 && <span>GitHub: {ghParts.join(" · ")}</span>}
           </div>
-        )}
-
-        {(project.description || descOpen) && (
-          <div>
-            <button
-              type="button"
-              onClick={() => setDescOpen((v) => !v)}
-              className="text-xs text-slate-400 hover:text-slate-300 transition-colors mb-2"
-            >
-              {descOpen ? "Hide description" : "Show description"}
-            </button>
-            {descOpen && (
-              <Editable
-                field="description"
-                label="Description"
-                value={project.description}
-                multi
-                editing={editingField === "description"}
-                tempValue={tempValue}
-                onTempChange={onTempChange}
-                onStartEdit={onStartEdit}
-                onCommit={onCommit}
-                onKeyDown={onKeyDown}
-                inputRef={inputRef}
-              />
-            )}
-          </div>
-        )}
-
-        {!project.description && !descOpen && (
-          <button
-            type="button"
-            onClick={() => setDescOpen(true)}
-            className="text-xs text-slate-500 hover:text-slate-400 transition-colors"
-          >
-            + Add description
-          </button>
         )}
 
         <div className="flex items-center gap-2">
