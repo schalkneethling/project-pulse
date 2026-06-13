@@ -33,14 +33,6 @@ export function ProjectList({ projects, onSelect }) {
                 <h3 className="font-semibold text-slate-200 group-hover:text-white truncate">
                   {p.name || "Untitled Project"}
                 </h3>
-                {p.description && (
-                  <p className="mt-1 text-sm text-slate-400 line-clamp-2">{p.description}</p>
-                )}
-                {p.nextStep && (
-                  <p className="mt-2 text-sm text-slate-500">
-                    <span className="text-slate-400 font-medium">Next:</span> {p.nextStep}
-                  </p>
-                )}
               </div>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
                 {isArchived ? (

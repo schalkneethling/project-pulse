@@ -11,8 +11,6 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
     url: netlify?.url || "",
     state: netlify?.lastDeploy?.state || "ready",
     branch: netlify?.lastDeploy?.branch || "main",
-    commitMessage: netlify?.lastDeploy?.commitMessage || "",
-    deployTime: netlify?.lastDeploy?.deployTime || "",
     errorMessage: netlify?.lastDeploy?.errorMessage || "",
   });
   const ic =
@@ -31,10 +29,10 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
         state: form.state,
         createdAt: new Date().toISOString(),
         publishedAt: form.state === "ready" ? new Date().toISOString() : null,
-        deployTime: form.deployTime ? parseInt(form.deployTime, 10) : null,
+        deployTime: netlify?.lastDeploy?.deployTime ?? null,
         errorMessage: form.state === "error" ? form.errorMessage.trim() : null,
         branch: form.branch.trim() || "main",
-        commitMessage: form.commitMessage.trim() || null,
+        commitMessage: netlify?.lastDeploy?.commitMessage ?? null,
       },
     });
   };
@@ -125,32 +123,6 @@ export function NetlifyModal({ netlify, onSave, onClose }) {
               value={form.branch}
               onChange={(e) => setForm({ ...form, branch: e.target.value })}
               placeholder="main"
-              className={ic}
-            />
-          </div>
-          <div>
-            <label htmlFor="netlify-deploy-commit" className={lc}>
-              Last commit message
-            </label>
-            <input
-              id="netlify-deploy-commit"
-              type="text"
-              value={form.commitMessage}
-              onChange={(e) => setForm({ ...form, commitMessage: e.target.value })}
-              placeholder="fix: update header styles"
-              className={ic}
-            />
-          </div>
-          <div>
-            <label htmlFor="netlify-deploy-time" className={lc}>
-              Build time (seconds)
-            </label>
-            <input
-              id="netlify-deploy-time"
-              type="number"
-              value={form.deployTime}
-              onChange={(e) => setForm({ ...form, deployTime: e.target.value })}
-              placeholder="120"
               className={ic}
             />
           </div>
