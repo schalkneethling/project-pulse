@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GitHub Issue Triage Report - project-pulse</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f7f4;
+        --panel: #ffffff;
+        --text: #1f2933;
+        --muted: #5f6b76;
+        --border: #d8ddd8;
+        --p0: #b60205;
+        --p1: #d93f0b;
+        --p2: #9a7600;
+        --p3: #0e7a16;
+        --link: #075985;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+        margin: 0 0 12px;
+      }
+
+      p {
+        margin: 0 0 12px;
+      }
+
+      a {
+        color: var(--link);
+      }
+
+      .meta,
+      .note {
+        color: var(--muted);
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 12px;
+        margin: 20px 0 28px;
+      }
+
+      .summary-card,
+      details {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+
+      .summary-card {
+        padding: 14px;
+      }
+
+      .summary-card strong {
+        display: block;
+        font-size: 22px;
+      }
+
+      details {
+        margin: 16px 0;
+        overflow: hidden;
+      }
+
+      summary {
+        cursor: pointer;
+        font-weight: 700;
+        padding: 16px 18px;
+        background: #eef2ee;
+      }
+
+      .details-body {
+        padding: 18px;
+      }
+
+      .label {
+        display: inline-block;
+        border-radius: 999px;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
+        padding: 5px 8px;
+        text-transform: uppercase;
+      }
+
+      .p0 { background: var(--p0); }
+      .p1 { background: var(--p1); }
+      .p2 { background: var(--p2); }
+      .p3 { background: var(--p3); }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 16px;
+      }
+
+      th,
+      td {
+        border-top: 1px solid var(--border);
+        padding: 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+
+      td:first-child,
+      th:first-child {
+        width: 78px;
+      }
+
+      .labels {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 760px) {
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+          display: block;
+        }
+
+        thead {
+          display: none;
+        }
+
+        tr {
+          border-top: 1px solid var(--border);
+          padding: 10px 0;
+        }
+
+        td {
+          border: 0;
+          padding: 6px 0;
+        }
+
+        td::before {
+          color: var(--muted);
+          content: attr(data-label) ": ";
+          display: block;
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>GitHub Issue Triage Report</h1>
+      <p class="meta">Generated 2026-06-15 15:13:15 SAST.</p>
+      <p><strong>Input repositories:</strong> schalkneethling/project-pulse</p>
+
+      <section aria-labelledby="summary-heading">
+        <h2 id="summary-heading">Summary</h2>
+        <div class="summary-grid">
+          <div class="summary-card"><span>Repository</span><strong>schalkneethling/project-pulse</strong></div>
+          <div class="summary-card"><span>Status</span><strong>Triaged</strong></div>
+          <div class="summary-card"><span>Open issues</span><strong>14</strong></div>
+          <div class="summary-card"><span>p0 / p1 / p2 / p3</span><strong>0 / 3 / 7 / 4</strong></div>
+          <div class="summary-card"><span>Next issue</span><strong><a href="https://github.com/schalkneethling/project-pulse/issues/57">#57</a></strong></div>
+        </div>
+      </section>
+
+      <details open>
+        <summary>schalkneethling/project-pulse - 14 open issues - p0: 0, p1: 3, p2: 7, p3: 4 - next: #57 Stale project calculation is incorrect</summary>
+        <div class="details-body">
+          <h2>Project Goal Summary</h2>
+          <p>Project Pulse helps a solo maker keep many side projects moving by making attention obvious, preserving project context, and summarizing GitHub and Netlify signals without exposing private data. The highest-value work protects trust in the dashboard's attention signals, keeps integrations accurate, and reduces friction when resuming or updating project state.</p>
+
+          <h2>Label Update Status</h2>
+          <p>Created the required labels <span class="label p0">p0</span>, <span class="label p1">p1</span>, <span class="label p2">p2</span>, and <span class="label p3">p3</span>. Applied exactly one of these labels to each open issue. Legacy priority labels found on existing issues were removed from those issues during triage.</p>
+
+          <h2>Next Issue Nomination</h2>
+          <p><a href="https://github.com/schalkneethling/project-pulse/issues/57">#57 Stale project calculation is incorrect</a> should be worked next. It directly undermines the north star: the dashboard should answer what needs attention, and a false stale badge makes active projects look neglected. The issue is user-facing, trust-impacting, and narrow enough for a focused debugging session.</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Issue</th>
+                <th>Rationale tied to GOAL.md</th>
+                <th>Impact</th>
+                <th>Current labels</th>
+                <th>Notes or uncertainty</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Priority"><span class="label p1">p1</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/57">#57 Stale project calculation is incorrect &#8212; active projects shown as 1mo stale</a></td>
+                <td data-label="Rationale">The goal centers on making attention obvious. Incorrect stale indicators corrupt the core signal a user relies on to decide what needs work.</td>
+                <td data-label="Impact">Major user-facing trust issue in the project list and triage flow.</td>
+                <td data-label="Current labels" class="labels">p1</td>
+                <td data-label="Notes">The root cause is not confirmed, but the symptoms are concrete enough to start.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p1">p1</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/67">#67 Auto-sync GitHub activity when a repository is first linked</a></td>
+                <td data-label="Rationale">GitHub activity is one of the primary external signals. Requiring a manual refresh after linking makes the integration feel incomplete and delays useful attention data.</td>
+                <td data-label="Impact">High impact on integration onboarding and dashboard freshness.</td>
+                <td data-label="Current labels" class="labels">enhancement, p1</td>
+                <td data-label="Notes">No schema change appears required; scope is well described.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p1">p1</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/46">#46 Skip writes when upstream data is unchanged</a></td>
+                <td data-label="Rationale">The app should surface accurate signals, not noise. Avoiding no-op writes prevents false realtime updates when GitHub or Netlify data has not changed.</td>
+                <td data-label="Impact">High leverage for reliability, reduced notification noise, and lower sync cost.</td>
+                <td data-label="Current labels" class="labels">p1</td>
+                <td data-label="Notes">Implementation choice needs care, but the DB-side guard path is clear.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p2">p2</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/70">#70 Parse GitHub owner and repo from a repository URL</a></td>
+                <td data-label="Rationale">Reduces friction when connecting GitHub, which supports the goal of integrating tool signals with low ceremony.</td>
+                <td data-label="Impact">Useful onboarding and ergonomics improvement.</td>
+                <td data-label="Current labels" class="labels">enhancement, p2</td>
+                <td data-label="Notes">Well scoped to the GitHub modal.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p2">p2</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/69">#69 Align project card status tokens to the bottom of cards</a></td>
+                <td data-label="Rationale">Improves scanning of attention signals on project cards, matching the "attention over inventory" principle.</td>
+                <td data-label="Impact">Medium visual clarity improvement across the dashboard.</td>
+                <td data-label="Current labels" class="labels">enhancement, p2</td>
+                <td data-label="Notes">Primarily layout; lower urgency than incorrect data.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p2">p2</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/49">#49 Toast: make auto-dismiss opt-in, default to manual dismiss</a></td>
+                <td data-label="Rationale">Actionable update notifications help users apply fresh data without losing in-place context.</td>
+                <td data-label="Impact">Medium UX reliability improvement for realtime updates.</td>
+                <td data-label="Current labels" class="labels">p2</td>
+                <td data-label="Notes">Pairs naturally with realtime sync improvements.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p2">p2</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/48">#48 Coalesce realtime row events into a single 'updates available' signal</a></td>
+                <td data-label="Rationale">Supports reliable, quiet realtime updates and avoids relying on React state behavior to hide duplicate sync events.</td>
+                <td data-label="Impact">Medium architecture and quota improvement.</td>
+                <td data-label="Current labels" class="labels">p2</td>
+                <td data-label="Notes">Bigger migration surface than #46, so it follows the no-op write fix.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p2">p2</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/45">#45 Add visual sync progress indicator using &lt;progress&gt; element</a></td>
+                <td data-label="Rationale">Makes background and manual sync activity visible, which helps users understand when dashboard state is changing.</td>
+                <td data-label="Impact">Medium feedback improvement for integration syncs.</td>
+                <td data-label="Current labels" class="labels">p2</td>
+                <td data-label="Notes">Best after the sync signal semantics are less noisy.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p2">p2</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/42">#42 Feat: Todos should be editable</a></td>
+                <td data-label="Rationale">Editable work items help preserve project context and support low-friction project resumption.</td>
+                <td data-label="Impact">Medium product capability for manual project state.</td>
+                <td data-label="Current labels" class="labels">enhancement, p2</td>
+                <td data-label="Notes">Body is thin; implementation needs discovery in the existing todo UI.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p2">p2</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/19">#19 feat: replace console.error with Sentry error reporting</a></td>
+                <td data-label="Rationale">Production error visibility supports reliability of hooks and sync functions that protect core project data and integrations.</td>
+                <td data-label="Impact">Medium reliability and observability improvement.</td>
+                <td data-label="Current labels" class="labels">enhancement, p2</td>
+                <td data-label="Notes">Requires dependency and configuration choices.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p3">p3</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/56">#56 Refresh data toast shown twice after clicking refresh</a></td>
+                <td data-label="Rationale">Duplicate toast behavior is noisy, but it does not appear to block the main dashboard or data flows.</td>
+                <td data-label="Impact">Low to medium polish bug.</td>
+                <td data-label="Current labels" class="labels">p3</td>
+                <td data-label="Notes">May be resolved indirectly by realtime toast changes.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p3">p3</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/47">#47 Make background sync cron schedule configurable</a></td>
+                <td data-label="Rationale">Configuration helps lower-activity deployments, but the default schedule still supports the project goal today.</td>
+                <td data-label="Impact">Low immediate impact; operator ergonomics.</td>
+                <td data-label="Current labels" class="labels">p3</td>
+                <td data-label="Notes">More valuable after no-op writes and realtime coalescing are addressed.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p3">p3</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/18">#18 refactor: replace useEffect data fetching with useSWR or React Query</a></td>
+                <td data-label="Rationale">Better caching could improve reliability and ergonomics, but it is broad refactor work rather than an immediate goal blocker.</td>
+                <td data-label="Impact">Potentially useful, but lower urgency and higher churn.</td>
+                <td data-label="Current labels" class="labels">enhancement, refactor, p3</td>
+                <td data-label="Notes">Could be revisited when concrete data-fetching pain blocks a feature.</td>
+              </tr>
+              <tr>
+                <td data-label="Priority"><span class="label p3">p3</span></td>
+                <td data-label="Issue"><a href="https://github.com/schalkneethling/project-pulse/issues/11">#11 refactor: evaluate Temporal API and Intl.RelativeTimeFormat for date helpers</a></td>
+                <td data-label="Rationale">Date helper cleanup is sensible, but weakly aligned with the current focus unless it fixes a concrete display bug.</td>
+                <td data-label="Impact">Low immediate impact; technical cleanup.</td>
+                <td data-label="Current labels" class="labels">enhancement, p3</td>
+                <td data-label="Notes">Could become higher if tied to the stale calculation bug.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </main>
+  </body>
+</html>

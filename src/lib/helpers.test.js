@@ -33,10 +33,32 @@ describe("lastActivityAt", () => {
   it("returns the most recent date across sources", () => {
     const project = {
       updatedAt: "2026-01-01T00:00:00Z",
+      tasks: [{ updatedAt: "2026-05-01T00:00:00Z", createdAt: "2026-04-01T00:00:00Z" }],
       github: { activity: { latestCommitAt: "2026-06-12T10:00:00Z" } },
       netlify: { lastDeploy: { publishedAt: "2026-03-01T00:00:00Z" } },
     };
     expect(lastActivityAt(project)).toBe("2026-06-12T10:00:00Z");
+  });
+
+  it("uses task activity when the project timestamp is stale", () => {
+    const project = {
+      updatedAt: "2026-04-01T00:00:00Z",
+      tasks: [
+        { updatedAt: "2026-05-20T08:30:00Z", createdAt: "2026-05-19T08:30:00Z" },
+        { updatedAt: "2026-05-18T08:30:00Z", createdAt: "2026-05-18T08:30:00Z" },
+      ],
+    };
+
+    expect(lastActivityAt(project)).toBe("2026-05-20T08:30:00Z");
+  });
+
+  it("uses task creation when no task update timestamp exists", () => {
+    const project = {
+      updatedAt: "2026-04-01T00:00:00Z",
+      tasks: [{ createdAt: "2026-05-20T08:30:00Z" }],
+    };
+
+    expect(lastActivityAt(project)).toBe("2026-05-20T08:30:00Z");
   });
 
   it("falls back to updatedAt when no integrations are linked", () => {

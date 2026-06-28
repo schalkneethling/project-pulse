@@ -9,8 +9,10 @@ export const daysSince = (d) =>
 
 /** Latest activity across in-app edits, GitHub commits, and Netlify deploys. */
 export function lastActivityAt(project) {
+  const taskDates = (project?.tasks ?? []).flatMap((task) => [task.updatedAt, task.createdAt]);
   const candidates = [
     project?.updatedAt,
+    ...taskDates,
     project?.github?.activity?.latestCommitAt,
     project?.netlify?.lastDeploy?.publishedAt,
     project?.netlify?.lastDeploy?.createdAt,
