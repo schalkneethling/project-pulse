@@ -35,6 +35,7 @@ In your Supabase dashboard, go to **SQL Editor** and run each migration file **i
 9. `supabase/009_realtime_and_cron.sql` — Realtime publication, upsert constraints, token flags
 10. `supabase/010_kanban_status.sql` — kanban status values
 11. `supabase/011_work_items_merge.sql` — work item fields on tasks
+12. `supabase/012_service_dashboard.sql` — generic service dashboard connections, resources, snapshots, and alerts
 
 Each file is idempotent where possible, but running them in order on a fresh database is the supported path.
 
@@ -140,6 +141,10 @@ project-pulse/
 - **netlify_deploys** — state, branch, commit, build time, errors, linked to site
 - **github_repos** — GitHub owner/repo, linked to project (1:1)
 - **github_activity** — GitHub open PRs, review requests, assigned issues, latest commit, linked to repo
+- **service_connections** — generic provider connections for the services dashboard
+- **service_resources** — tracked resources for provider adapters
+- **service_snapshots** — normalized service health, usage, cost, and rate-limit snapshots
+- **service_alerts** — active or resolved service dashboard alerts
 - **user_settings** — Netlify and GitHub API tokens (RLS-protected; presence exposed via boolean flags)
 
 All tables have Row Level Security — users can only access their own data.
