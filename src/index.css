@@ -16,3 +16,43 @@ dialog {
 dialog::backdrop {
   background: var(--backdrop-bg);
 }
+
+body.focus-mode-open {
+  overflow: hidden;
+}
+
+.focus-jelly {
+  position: absolute;
+  width: clamp(12rem, 24vw, 24rem);
+  opacity: 0.5;
+  filter: blur(0.2px) drop-shadow(0 0 3rem rgb(56 189 248 / 0.08));
+  animation: jelly-drift 24s ease-in-out infinite alternate, jelly-breathe 7s ease-in-out infinite;
+}
+
+.focus-tentacle {
+  fill: none;
+  stroke: rgb(125 211 252 / 0.18);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.jelly-one { left: -5%; top: 8%; transform: rotate(-12deg); }
+.jelly-two { right: -3%; bottom: -4%; animation-delay: -9s, -2s; animation-duration: 29s, 9s; }
+.jelly-three { left: 54%; top: -16%; width: clamp(9rem, 17vw, 17rem); opacity: 0.3; animation-delay: -16s, -4s; }
+
+.focus-mode.is-paused .focus-jelly { animation-play-state: paused; }
+
+@keyframes jelly-drift {
+  0% { translate: -2vw -1vh; rotate: -3deg; }
+  50% { translate: 3vw 4vh; rotate: 4deg; }
+  100% { translate: -1vw 9vh; rotate: -2deg; }
+}
+
+@keyframes jelly-breathe {
+  0%, 100% { scale: 0.96; opacity: 0.35; }
+  50% { scale: 1.04; opacity: 0.58; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-jelly { animation: none; }
+}

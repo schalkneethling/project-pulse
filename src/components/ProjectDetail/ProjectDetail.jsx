@@ -17,6 +17,7 @@ const detailInitial = {
   showGithub: false,
   syncingNetlify: false,
   syncingGithub: false,
+  syncingGithubIssues: false,
 };
 
 function detailReducer(state, action) {
@@ -45,6 +46,7 @@ export function ProjectDetail({
   hasGithubToken,
   onOpenSettings,
   onSyncResult,
+  onFocus,
 }) {
   const [d, dispatch] = useReducer(detailReducer, detailInitial);
   const [editingItem, setEditingItem] = useState(null);
@@ -86,6 +88,20 @@ export function ProjectDetail({
       onSyncResult?.(result, "GitHub");
     } finally {
       dispatch({ type: "SET_SYNCING", key: "syncingGithub", value: false });
+    }
+  };
+
+  const handleSyncGithubIssues = async () => {
+    dispatch({ type: "SET_SYNCING", key: "syncingGithubIssues", value: true });
+    try {
+      const result = await actions.syncGithubIssues(project.id);
+      onSyncResult?.({
+        summary: `${result.created} created, ${result.updated} updated, ${result.completed} completed, ${result.reopened} reopened`,
+      }, "GitHub issues");
+    } catch (error) {
+      onSyncResult?.({ error: error.message }, "GitHub issues");
+    } finally {
+      dispatch({ type: "SET_SYNCING", key: "syncingGithubIssues", value: false });
     }
   };
 
@@ -136,7 +152,9 @@ export function ProjectDetail({
         onEdit={() => dispatch({ type: "SET_SHOW", key: "showGithub", value: true })}
         onRemove={() => actions.removeGithubRepo(project.id)}
         onSync={handleSyncGithub}
+        onSyncIssues={handleSyncGithubIssues}
         syncing={d.syncingGithub}
+        syncingIssues={d.syncingGithubIssues}
         hasGithubToken={hasGithubToken}
         onOpenSettings={onOpenSettings}
       />
@@ -145,6 +163,8 @@ export function ProjectDetail({
         project={project}
         onAdd={(fields) => actions.addTask(project.id, fields)}
         onUpdate={(taskId, updates) => actions.updateTask(project.id, taskId, updates)}
+        onComplete={(taskId) => actions.completeTask(project.id, taskId)}
+        onFocus={(task) => onFocus(project.id, task)}
         onArchive={(taskId) => actions.archiveTask(project.id, taskId)}
         onUnarchive={(taskId) => actions.unarchiveTask(project.id, taskId)}
         onDelete={(taskId) => actions.deleteTask(project.id, taskId)}
@@ -155,7 +175,15 @@ export function ProjectDetail({
         <WorkItemEditModal
           item={editingItem}
           onSave={async (updates) => {
-            await actions.updateTask(project.id, editingItem.id, updates);
+            if (updates.status === "done" && editingItem.status !== "done") {
+              const { status: _status, ...otherUpdates } = updates;
+              if (Object.keys(otherUpdates).length) {
+                await actions.updateTask(project.id, editingItem.id, otherUpdates);
+              }
+              await actions.completeTask(project.id, editingItem.id);
+            } else {
+              await actions.updateTask(project.id, editingItem.id, updates);
+            }
             setEditingItem(null);
           }}
           onClose={() => setEditingItem(null)}

@@ -28,6 +28,7 @@ export function Overview({
   hasNetlifyToken,
   hasGithubToken,
   onOpenSettings,
+  onFocus,
 }) {
   const sectionRefs = useRef({});
 
@@ -238,18 +239,16 @@ export function Overview({
               </button>
             ))}
             {blockedTasks.map((t) => (
-              <button
-                type="button"
-                key={t.id}
-                onClick={() => onSelect(t.pId)}
-                className="w-full text-left rounded-lg bg-red-950/20 border border-red-900/30 p-3 hover:bg-red-950/40 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-400">{t.pName}</span>
-                  <TypeBadge type="task" />
-                </div>
-                <p className="font-medium text-slate-200">{t.title}</p>
-              </button>
+              <div key={t.id} className="flex items-center gap-3 rounded-lg bg-red-950/20 border border-red-900/30 p-3">
+                <button type="button" onClick={() => onSelect(t.pId)} className="min-w-0 flex-1 text-left hover:brightness-125 transition-all">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-400">{t.pName}</span>
+                    <TypeBadge type="task" />
+                  </div>
+                  <p className="font-medium text-slate-200">{t.title}</p>
+                </button>
+                <button type="button" onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
+              </div>
             ))}
           </div>
         </section>
@@ -266,27 +265,26 @@ export function Overview({
             {dueSoon.map((t) => {
               const dueState = getDueState(t.dueDate, t.status);
               return (
-                <button
-                  type="button"
+                <div
                   key={t.id}
-                  onClick={() => onSelect(t.pId)}
-                  className={`w-full text-left rounded-lg border p-3 hover:brightness-110 transition-all ${
+                  className={`flex items-center gap-3 rounded-lg border p-3 ${
                     dueState === "late"
                       ? "bg-red-950/30 border-red-900/40"
                       : "bg-yellow-950/20 border-yellow-900/30"
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-400">{t.pName}</span>
-                    <TypeBadge type="task" />
-                    <span
-                      className={`ml-auto text-xs ${dueState === "late" ? "text-red-400" : "text-yellow-400"}`}
-                    >
-                      {dueState === "late" ? "Overdue" : "Due today"} · {formatDateKey(t.dueDate)}
-                    </span>
-                  </div>
-                  <p className="font-medium text-slate-200 mt-1">{t.title}</p>
-                </button>
+                  <button type="button" onClick={() => onSelect(t.pId)} className="min-w-0 flex-1 text-left hover:brightness-110 transition-all">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-400">{t.pName}</span>
+                      <TypeBadge type="task" />
+                      <span className={`ml-auto text-xs ${dueState === "late" ? "text-red-400" : "text-yellow-400"}`}>
+                        {dueState === "late" ? "Overdue" : "Due today"} · {formatDateKey(t.dueDate)}
+                      </span>
+                    </div>
+                    <p className="font-medium text-slate-200 mt-1">{t.title}</p>
+                  </button>
+                  <button type="button" onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
+                </div>
               );
             })}
           </div>
@@ -303,18 +301,16 @@ export function Overview({
           <p className="text-xs text-slate-500 mb-3">Work you have already started</p>
           <div className="space-y-2">
             {inProgress.map((t) => (
-              <button
-                type="button"
-                key={t.id}
-                onClick={() => onSelect(t.pId)}
-                className="w-full text-left rounded-lg bg-blue-950/20 border border-blue-900/30 p-3 hover:bg-blue-950/40 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-400">{t.pName}</span>
-                  <TypeBadge type="task" />
-                </div>
-                <p className="font-medium text-slate-200">{t.title}</p>
-              </button>
+              <div key={t.id} className="flex items-center gap-3 rounded-lg bg-blue-950/20 border border-blue-900/30 p-3">
+                <button type="button" onClick={() => onSelect(t.pId)} className="min-w-0 flex-1 text-left hover:brightness-125 transition-all">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-400">{t.pName}</span>
+                    <TypeBadge type="task" />
+                  </div>
+                  <p className="font-medium text-slate-200">{t.title}</p>
+                </button>
+                <button type="button" onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
+              </div>
             ))}
           </div>
         </section>

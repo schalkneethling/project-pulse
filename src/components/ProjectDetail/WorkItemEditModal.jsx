@@ -3,11 +3,12 @@ import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { WORK_STATUS, WORK_STATUS_ORDER } from "../../lib/constants";
 import { safeHttpUrl } from "../../lib/linkify";
 
-const FIELDS = ["title", "who", "source", "sourceUrl", "dueDate", "status"];
+const FIELDS = ["title", "description", "who", "source", "sourceUrl", "dueDate", "status"];
 
 function init(item) {
   return {
     title: item.title ?? "",
+    description: item.description ?? "",
     who: item.who ?? "",
     source: item.source ?? "",
     sourceUrl: item.sourceUrl ?? "",
@@ -119,6 +120,19 @@ export function WorkItemEditModal({ item, onSave, onClose }) {
               onChange={(e) => dispatch({ type: "SET", field: "title", value: e.target.value })}
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="edit-description" className="block text-xs uppercase tracking-wider text-slate-400 mb-1">
+              Description
+            </label>
+            <textarea
+              id="edit-description"
+              rows={3}
+              value={form.description}
+              onChange={(e) => dispatch({ type: "SET", field: "description", value: e.target.value })}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
 

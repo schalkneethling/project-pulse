@@ -164,6 +164,7 @@ export function useProjects(userId) {
       };
 
       if (typeof fields === "object" && fields !== null) {
+        if (fields.description) payload.description = fields.description;
         if (fields.who) payload.who = fields.who;
         if (fields.source) payload.source = fields.source;
         if ("sourceUrl" in fields) payload.source_url = toDbSourceUrl(fields.sourceUrl);
@@ -225,6 +226,74 @@ export function useProjects(userId) {
       return task;
     },
     [touchProject],
+  );
+
+  const completeTask = useCallback(
+    async (projectId, taskId) => {
+      const task = projects
+        .find((project) => project.id === projectId)
+        ?.tasks.find((candidate) => candidate.id === taskId);
+
+      if (!task?.githubIssueId) {
+        return updateTask(projectId, taskId, { status: "done" });
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+
+      const res = await fetch("/.netlify/functions/complete-github-task", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ taskId }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Could not close the GitHub issue.");
+
+      setProjects((prev) =>
+        prev.map((project) =>
+          project.id === projectId
+            ? {
+                ...project,
+                tasks: project.tasks.map((item) =>
+                  item.id === taskId
+                    ? { ...item, status: "done", githubIssueOpen: false, githubCompletedBySync: false }
+                    : item,
+                ),
+              }
+            : project,
+        ),
+      );
+      return result.task;
+    },
+    [projects, updateTask],
+  );
+
+  const syncGithubIssues = useCallback(
+    async (projectId) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not authenticated");
+
+      const res = await fetch("/.netlify/functions/sync-github-issues", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ projectId }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Could not synchronize GitHub issues.");
+      await fetchProjects();
+      return result;
+    },
+    [fetchProjects],
   );
 
   const deleteTask = useCallback(
@@ -398,6 +467,7 @@ export function useProjects(userId) {
     unarchiveProject,
     addTask,
     updateTask,
+    completeTask,
     deleteTask,
     archiveTask,
     unarchiveTask,
@@ -407,6 +477,7 @@ export function useProjects(userId) {
     removeGithubRepo,
     syncNetlifyDeploys,
     syncGithubActivity,
+    syncGithubIssues,
     refetch: fetchProjects,
   };
 }
@@ -414,6 +485,7 @@ export function useProjects(userId) {
 function taskUpdatesToDb(updates) {
   const payload = {};
   if ("title" in updates) payload.title = updates.title;
+  if ("description" in updates) payload.description = updates.description;
   if ("status" in updates) payload.status = normalizeWorkStatus(updates.status);
   if ("who" in updates) payload.who = updates.who;
   if ("source" in updates) payload.source = updates.source;
@@ -427,6 +499,7 @@ function normalizeTask(t) {
   return {
     id: t.id,
     title: t.title,
+    description: t.description ?? "",
     status: t.status,
     who: t.who ?? null,
     source: t.source ?? null,
@@ -435,6 +508,11 @@ function normalizeTask(t) {
     archivedAt: t.archived_at ?? null,
     createdAt: t.created_at,
     updatedAt: t.updated_at ?? t.created_at,
+    githubRepoId: t.github_repo_id ?? null,
+    githubIssueId: t.github_issue_id ?? null,
+    githubIssueNumber: t.github_issue_number ?? null,
+    githubIssueOpen: t.github_issue_open ?? null,
+    githubCompletedBySync: t.github_completed_by_sync ?? false,
   };
 }
 
