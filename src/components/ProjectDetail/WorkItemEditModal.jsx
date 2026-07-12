@@ -55,6 +55,8 @@ export function WorkItemEditModal({ item, onSave, onClose }) {
       const next =
         f === "title"
           ? form.title.trim()
+          : f === "description"
+            ? form.description.trim()
           : f === "sourceUrl"
             ? normalizedSourceUrl
             : form[f];

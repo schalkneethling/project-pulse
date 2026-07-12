@@ -85,7 +85,7 @@ export default async (request) => {
   }
 
   if (!repos || repos.length === 0) {
-    return new Response(JSON.stringify({ synced: 0, results: [] }), {
+    return new Response(JSON.stringify({ synced: 0, changed: 0, skipped: 0, results: [] }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });

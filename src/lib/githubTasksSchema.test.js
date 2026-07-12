@@ -20,9 +20,9 @@ describe("GitHub-backed task implementation", () => {
   });
 
   it("closes GitHub before completing the local task", () => {
-    expect(completeFunction.indexOf('body: JSON.stringify({ state: "closed" })')).toBeGreaterThan(-1);
-    expect(completeFunction.indexOf('.update({\n      status: "done"')).toBeGreaterThan(
-      completeFunction.indexOf('body: JSON.stringify({ state: "closed" })'),
-    );
+    const closeCall = completeFunction.search(/body:\s*JSON\.stringify\(\{\s*state:\s*"closed"\s*\}\)/);
+    const localUpdate = completeFunction.search(/\.update\(\{\s*status:\s*"done"/);
+    expect(closeCall).toBeGreaterThan(-1);
+    expect(localUpdate).toBeGreaterThan(closeCall);
   });
 });

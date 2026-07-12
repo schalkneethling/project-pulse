@@ -1,19 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
-
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
+import { bearerToken, createServiceClient, json } from "./_shared/http.mjs";
 
 export default async (request) => {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-  const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  const token = bearerToken(request);
   if (!token) return json({ error: "Missing authorization token" }, 401);
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-    return json({ error: "Server configuration error" }, 500);
-  }
+  const supabase = createServiceClient();
+  if (!supabase) return json({ error: "Server configuration error" }, 500);
 
   let body;
   try {
@@ -23,7 +15,6 @@ export default async (request) => {
   }
   if (!body?.taskId) return json({ error: "taskId is required" }, 400);
 
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return json({ error: "Invalid or expired token" }, 401);
 

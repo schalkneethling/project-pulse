@@ -12,6 +12,14 @@ function failTaskMutation(error, label) {
   throw error;
 }
 
+async function readJsonResponse(response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 function toDbSourceUrl(value) {
   if (value == null) return null;
   const trimmed = value.trim();
@@ -251,8 +259,9 @@ export function useProjects(userId) {
         },
         body: JSON.stringify({ taskId }),
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Could not close the GitHub issue.");
+      const result = await readJsonResponse(res);
+      if (!res.ok) throw new Error(result?.error || "Could not close the GitHub issue.");
+      if (!result) throw new Error("GitHub issue closed, but Pulse received an invalid response.");
 
       setProjects((prev) =>
         prev.map((project) =>
@@ -288,8 +297,9 @@ export function useProjects(userId) {
         },
         body: JSON.stringify({ projectId }),
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Could not synchronize GitHub issues.");
+      const result = await readJsonResponse(res);
+      if (!res.ok) throw new Error(result?.error || "Could not synchronize GitHub issues.");
+      if (!result) throw new Error("GitHub issues synchronized, but Pulse received an invalid response.");
       await fetchProjects();
       return result;
     },

@@ -1,22 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
+import { bearerToken, createServiceClient, json } from "./_shared/http.mjs";
 
 const GITHUB_API = "https://api.github.com";
-
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
+const MAX_GITHUB_ISSUE_PAGES = 25;
 
 export default async (request) => {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const token = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+  const token = bearerToken(request);
+  const supabase = createServiceClient();
   if (!token) return json({ error: "Missing authorization token" }, 401);
-  if (!supabaseUrl || !serviceKey) return json({ error: "Server configuration error" }, 500);
+  if (!supabase) return json({ error: "Server configuration error" }, 500);
 
   let body;
   try {
@@ -26,7 +19,6 @@ export default async (request) => {
   }
   if (!body?.projectId) return json({ error: "projectId is required" }, 400);
 
-  const supabase = createClient(supabaseUrl, serviceKey);
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return json({ error: "Invalid or expired token" }, 401);
 
@@ -55,7 +47,7 @@ export default async (request) => {
   const issues = [];
   const base = `${GITHUB_API}/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.repo)}/issues`;
 
-  for (let page = 1; ; page += 1) {
+  for (let page = 1; page <= MAX_GITHUB_ISSUE_PAGES; page += 1) {
     let response;
     try {
       response = await fetch(`${base}?state=open&per_page=100&page=${page}`, {
@@ -70,6 +62,11 @@ export default async (request) => {
     if (!Array.isArray(pageItems)) return json({ error: "GitHub returned an invalid issue list" }, 502);
     issues.push(...pageItems.filter((issue) => !issue.pull_request));
     if (pageItems.length < 100) break;
+    if (page === MAX_GITHUB_ISSUE_PAGES) {
+      return json({
+        error: `Repository has more than ${MAX_GITHUB_ISSUE_PAGES * 100} open issue records; no tasks were changed.`,
+      }, 422);
+    }
   }
 
   const { data: existing, error: existingError } = await supabase
@@ -142,6 +139,7 @@ export default async (request) => {
   }
 
   for (const task of existing || []) {
+    if (task.github_issue_id == null) continue;
     if (openIds.has(String(task.github_issue_id)) || task.github_issue_open === false) continue;
     const { error } = await supabase
       .from("tasks")

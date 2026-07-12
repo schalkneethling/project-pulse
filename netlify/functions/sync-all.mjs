@@ -118,7 +118,7 @@ async function syncNetlifyForUser(supabase, userId, netlifyToken) {
     .eq("user_id", userId);
 
   if (error) {
-    return { synced, errors: [`netlify_sites(${userId}): ${error.message}`] };
+    return { synced, changed: changedCount, skipped, errors: [`netlify_sites(${userId}): ${error.message}`] };
   }
 
   for (const site of sites || []) {
@@ -201,10 +201,10 @@ async function syncGithubForUser(supabase, userId, githubToken) {
     .eq("user_id", userId);
 
   if (error) {
-    return { synced, errors: [`github_repos(${userId}): ${error.message}`] };
+    return { synced, changed: changedCount, skipped, errors: [`github_repos(${userId}): ${error.message}`] };
   }
   if (!repos || repos.length === 0) {
-    return { synced, errors };
+    return { synced, changed: changedCount, skipped, errors };
   }
 
   const ghHeaders = {

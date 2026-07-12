@@ -50,4 +50,67 @@ describe("FocusMode", () => {
       accumulatedMs: 6_000,
     }));
   });
+
+  it("resumes from the current accumulated duration", async () => {
+    const onSessionChange = vi.fn();
+    render(
+      <FocusMode
+        session={{ running: false, anchor: null, accumulatedMs: 6_000 }}
+        task={{ title: "Resume timer", description: "" }}
+        onSessionChange={onSessionChange}
+        onComplete={vi.fn()}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Resume" }));
+    expect(onSessionChange).toHaveBeenCalledWith(expect.objectContaining({
+      running: true,
+      anchor: "10000",
+      accumulatedMs: 6_000,
+    }));
+  });
+
+  it("runs completion and reports a retryable failure", async () => {
+    const onComplete = vi.fn().mockRejectedValue(new Error("GitHub refused the update"));
+    render(
+      <FocusMode
+        session={{ running: false, anchor: null, accumulatedMs: 0 }}
+        task={{ title: "Close issue", description: "" }}
+        onSessionChange={vi.fn()}
+        onComplete={onComplete}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Mark complete" }));
+    expect(onComplete).toHaveBeenCalledOnce();
+    expect(await screen.findByRole("alert")).toHaveTextContent("GitHub refused the update");
+    expect(screen.getByRole("button", { name: "Mark complete" })).toBeEnabled();
+  });
+
+  it("runs successful completion without showing an error", async () => {
+    const onComplete = vi.fn().mockResolvedValue(undefined);
+    render(
+      <FocusMode
+        session={{ running: true, anchor: "10000", accumulatedMs: 0 }}
+        task={{ title: "Finish work", description: "" }}
+        onSessionChange={vi.fn()}
+        onComplete={onComplete}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Mark complete" }));
+    expect(onComplete).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows the unsupported-browser fallback without timer controls", () => {
+    delete globalThis.Temporal;
+    render(
+      <FocusMode
+        session={{ running: false, anchor: null, accumulatedMs: 0 }}
+        task={{ title: "Unsupported timer", description: "" }}
+        onSessionChange={vi.fn()}
+        onComplete={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("native Temporal API");
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
 });

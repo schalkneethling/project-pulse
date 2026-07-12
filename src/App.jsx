@@ -118,8 +118,10 @@ export default function App() {
 
   useEffect(() => {
     if (!focusSession || projLoading) return;
-    if (!focusTask || focusTask.archivedAt || focusTask.status === "done") setFocusSession(null);
-  }, [focusSession, focusTask, projLoading, setFocusSession]);
+    if (!focusProject || focusProject.archivedAt || !focusTask || focusTask.archivedAt || focusTask.status === "done") {
+      setFocusSession(null);
+    }
+  }, [focusSession, focusProject, focusTask, projLoading, setFocusSession]);
 
   const enterFocus = (projectId, task) => {
     if (!temporalAvailable()) {

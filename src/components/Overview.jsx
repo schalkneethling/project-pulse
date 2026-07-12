@@ -247,7 +247,7 @@ export function Overview({
                   </div>
                   <p className="font-medium text-slate-200">{t.title}</p>
                 </button>
-                <button type="button" onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
+                <button type="button" aria-label={`Enter focus: ${t.title}`} onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
               </div>
             ))}
           </div>
@@ -283,7 +283,7 @@ export function Overview({
                     </div>
                     <p className="font-medium text-slate-200 mt-1">{t.title}</p>
                   </button>
-                  <button type="button" onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
+                  <button type="button" aria-label={`Enter focus: ${t.title}`} onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
                 </div>
               );
             })}
@@ -309,7 +309,7 @@ export function Overview({
                   </div>
                   <p className="font-medium text-slate-200">{t.title}</p>
                 </button>
-                <button type="button" onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
+                <button type="button" aria-label={`Enter focus: ${t.title}`} onClick={() => onFocus(t.pId, t)} className="shrink-0 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1.5 text-xs font-medium text-sky-300 hover:bg-sky-500/20 transition-colors">Enter focus</button>
               </div>
             ))}
           </div>

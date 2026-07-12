@@ -111,6 +111,7 @@ export function WorkItemRow({
         {!archived && status !== "done" && onFocus && (
           <button
             type="button"
+            aria-label={`Enter focus: ${title}`}
             onClick={() => onFocus(item)}
             className="text-xs px-2.5 py-1 rounded-md border border-sky-500/40 bg-sky-500/10 font-medium text-sky-300 hover:bg-sky-500/20 transition-colors"
           >

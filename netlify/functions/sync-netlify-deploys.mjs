@@ -90,7 +90,7 @@ export default async (request) => {
   }
 
   if (!sites || sites.length === 0) {
-    return new Response(JSON.stringify({ synced: 0, deploys: [] }), {
+    return new Response(JSON.stringify({ synced: 0, changed: 0, skipped: 0, results: [] }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
