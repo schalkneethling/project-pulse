@@ -5,12 +5,14 @@ import { useSettings } from "./hooks/useSettings";
 import { useRealtimeSync } from "./hooks/useRealtimeSync";
 import { readViewFromUrl, writeViewToUrl } from "./lib/routing";
 import { visibleProjects } from "./lib/workItems";
+import { readFocusSession, temporalAvailable, writeFocusSession } from "./lib/focusTimer";
 import { LoginScreen } from "./components/LoginScreen";
 import { Toast } from "./components/Toast";
 import { Overview } from "./components/Overview";
 import { ProjectList } from "./components/ProjectList";
 import { ProjectDetail } from "./components/ProjectDetail/ProjectDetail";
 import { SettingsModal } from "./components/SettingsModal";
+import { FocusMode } from "./components/FocusMode";
 import { IconPlus, IconSettings, IconLogout } from "./components/icons";
 
 export default function App() {
@@ -25,6 +27,7 @@ export default function App() {
     unarchiveProject,
     addTask,
     updateTask,
+    completeTask,
     deleteTask,
     archiveTask,
     unarchiveTask,
@@ -34,6 +37,7 @@ export default function App() {
     removeGithubRepo,
     syncNetlifyDeploys,
     syncGithubActivity,
+    syncGithubIssues,
     refetch,
   } = useProjects(user?.id);
   const { hasNetlifyToken, hasGithubToken, saveTokens } = useSettings(user?.id);
@@ -43,6 +47,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [pulseToast, setPulseToast] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState(null);
+  const [focusSession, setFocusSessionState] = useState(() => readFocusSession());
 
   const selectedIdRef = useRef(initialUrl.projectId);
   const returnViewRef = useRef("overview");
@@ -56,6 +61,11 @@ export default function App() {
   }, []);
 
   const handleRealtimeChange = useCallback(() => setPulseToast(true), []);
+
+  const setFocusSession = useCallback((session) => {
+    setFocusSessionState(session);
+    writeFocusSession(session);
+  }, []);
 
   useRealtimeSync(user?.id, handleRealtimeChange);
 
@@ -78,6 +88,8 @@ export default function App() {
   };
 
   const selected = projects.find((p) => p.id === selectedIdRef.current);
+  const focusProject = projects.find((p) => p.id === focusSession?.projectId);
+  const focusTask = focusProject?.tasks.find((task) => task.id === focusSession?.taskId);
   const visibleCount = visibleProjects(projects).length;
 
   const handleNew = async () => {
@@ -97,9 +109,32 @@ export default function App() {
   const handleSyncResult = (result, provider) => {
     if (result?.error) {
       setFeedbackToast(`${provider} sync failed: ${result.error}`);
+    } else if (result?.summary) {
+      setFeedbackToast(`${provider}: ${result.summary}`);
     } else {
       setFeedbackToast(`${provider} synced successfully`);
     }
+  };
+
+  useEffect(() => {
+    if (!focusSession || projLoading) return;
+    if (!focusProject || focusProject.archivedAt || !focusTask || focusTask.archivedAt || focusTask.status === "done") {
+      setFocusSession(null);
+    }
+  }, [focusSession, focusProject, focusTask, projLoading, setFocusSession]);
+
+  const enterFocus = (projectId, task) => {
+    if (!temporalAvailable()) {
+      setFeedbackToast("Focus mode requires a browser with the native Temporal API.");
+      return;
+    }
+    setFocusSession({
+      projectId,
+      taskId: task.id,
+      running: true,
+      accumulatedMs: 0,
+      anchor: globalThis.Temporal.Now.instant().toString(),
+    });
   };
 
   if (authLoading) {
@@ -135,6 +170,7 @@ export default function App() {
     unarchiveProject,
     addTask,
     updateTask,
+    completeTask,
     deleteTask,
     archiveTask,
     unarchiveTask,
@@ -144,6 +180,7 @@ export default function App() {
     removeGithubRepo,
     syncNetlifyDeploys,
     syncGithubActivity,
+    syncGithubIssues,
   };
 
   return (
@@ -208,6 +245,7 @@ export default function App() {
               hasNetlifyToken={hasNetlifyToken}
               hasGithubToken={hasGithubToken}
               onOpenSettings={() => setShowSettings(true)}
+              onFocus={enterFocus}
             />
           </div>
         )}
@@ -242,6 +280,7 @@ export default function App() {
               hasGithubToken={hasGithubToken}
               onOpenSettings={() => setShowSettings(true)}
               onSyncResult={handleSyncResult}
+              onFocus={enterFocus}
             />
           </div>
         )}
@@ -267,6 +306,19 @@ export default function App() {
 
       {feedbackToast && (
         <Toast message={feedbackToast} onDismiss={() => setFeedbackToast(null)} />
+      )}
+
+      {focusSession && focusProject && focusTask && (
+        <FocusMode
+          session={focusSession}
+          task={focusTask}
+          projectName={focusProject.name}
+          onSessionChange={setFocusSession}
+          onComplete={async () => {
+            await completeTask(focusProject.id, focusTask.id);
+            setFocusSession(null);
+          }}
+        />
       )}
     </div>
   );

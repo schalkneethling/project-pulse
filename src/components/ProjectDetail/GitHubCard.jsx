@@ -63,7 +63,9 @@ export function GitHubCard({
   onEdit,
   onRemove,
   onSync,
+  onSyncIssues,
   syncing,
+  syncingIssues,
   hasGithubToken,
   onOpenSettings,
 }) {
@@ -147,6 +149,15 @@ export function GitHubCard({
             <IconExternal size={12} />
           </a>
         </div>
+        <button
+          type="button"
+          onClick={onSyncIssues}
+          disabled={syncingIssues}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-200 transition-colors hover:bg-sky-500/20 disabled:cursor-wait disabled:opacity-60"
+        >
+          <IconIssue size={14} />
+          {syncingIssues ? "Synchronizing issues…" : "Import / sync issues"}
+        </button>
         {activity ? (
           <>
             <div className="grid grid-cols-3 gap-2 mt-2">

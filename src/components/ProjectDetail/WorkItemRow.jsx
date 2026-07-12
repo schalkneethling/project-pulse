@@ -20,10 +20,11 @@ export function WorkItemRow({
   onArchive,
   onUnarchive,
   onDelete,
+  onFocus,
   archived = false,
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const { id, title, who, source, sourceUrl, status, dueDate } = item;
+  const { id, title, description, who, source, sourceUrl, status, dueDate } = item;
   const dueState = getDueState(dueDate, status);
   const segments = linkify(title);
   const safeSourceUrl = safeHttpUrl(sourceUrl);
@@ -65,6 +66,11 @@ export function WorkItemRow({
               ),
             )}
           </p>
+          {description && (
+            <p className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs leading-5 text-slate-400">
+              {description}
+            </p>
+          )}
           {(who || source || dueDate) && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
               {who && <span>Who: {who}</span>}
@@ -102,6 +108,16 @@ export function WorkItemRow({
       </div>
 
       <div className="flex items-center gap-2 flex-wrap pl-7">
+        {!archived && status !== "done" && onFocus && (
+          <button
+            type="button"
+            aria-label={`Enter focus: ${title}`}
+            onClick={() => onFocus(item)}
+            className="text-xs px-2.5 py-1 rounded-md border border-sky-500/40 bg-sky-500/10 font-medium text-sky-300 hover:bg-sky-500/20 transition-colors"
+          >
+            Enter focus
+          </button>
+        )}
         {!archived && meta.advance && onAdvance && (
           <button
             type="button"

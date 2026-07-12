@@ -2,7 +2,7 @@ import { useReducer, useState } from "react";
 import { safeHttpUrl } from "../../lib/linkify";
 import { IconPlus } from "../icons";
 
-const emptyForm = { title: "", who: "", source: "", sourceUrl: "", dueDate: "" };
+const emptyForm = { title: "", description: "", who: "", source: "", sourceUrl: "", dueDate: "" };
 
 function formReducer(state, action) {
   switch (action.type) {
@@ -35,6 +35,7 @@ export function WorkItemForm({ onCreate, compact = false }) {
 
       await onCreate({
         title: form.title.trim(),
+        description: form.description.trim() || undefined,
         who: form.who.trim() || undefined,
         source: form.source.trim() || undefined,
         sourceUrl: normalizedSourceUrl || undefined,
@@ -72,6 +73,16 @@ export function WorkItemForm({ onCreate, compact = false }) {
           <IconPlus size={18} />
         </button>
       </div>
+      <label htmlFor="work-description" className="sr-only">Description</label>
+      <textarea
+        id="work-description"
+        rows={2}
+        value={form.description}
+        onChange={(e) => dispatch({ type: "SET_FIELD", field: "description", value: e.target.value })}
+        placeholder="Short description (optional)"
+        aria-label="Work item description"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+      />
       {submitError && (
         <p role="alert" className="text-sm text-red-400">
           {submitError}

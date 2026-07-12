@@ -6,6 +6,10 @@
 // JS module.
 
 import { createClient } from "@supabase/supabase-js";
+import {
+  writeGithubActivitySnapshot,
+  writeNetlifyDeploySnapshot,
+} from "./sync-snapshot-writes.mjs";
 
 // Per-request timeout for outbound calls to Netlify/GitHub. The whole
 // sync-all invocation runs from a pg_cron tick every 5 minutes; if any
@@ -58,7 +62,14 @@ export default async (request) => {
     return json({ error: usersError.message }, 500);
   }
 
-  const summary = { users: 0, netlifySites: 0, githubRepos: 0, errors: [] };
+  const summary = {
+    users: 0,
+    netlifySites: 0,
+    githubRepos: 0,
+    changed: { netlifySites: 0, githubRepos: 0 },
+    skipped: { netlifySites: 0, githubRepos: 0 },
+    errors: [],
+  };
 
   for (const user of users || []) {
     summary.users += 1;
@@ -66,6 +77,8 @@ export default async (request) => {
     if (user.netlify_api_token) {
       const result = await syncNetlifyForUser(supabase, user.user_id, user.netlify_api_token);
       summary.netlifySites += result.synced;
+      summary.changed.netlifySites += result.changed;
+      summary.skipped.netlifySites += result.skipped;
       if (result.errors.length) {
         summary.errors.push(...result.errors);
       }
@@ -74,6 +87,8 @@ export default async (request) => {
     if (user.github_token) {
       const result = await syncGithubForUser(supabase, user.user_id, user.github_token);
       summary.githubRepos += result.synced;
+      summary.changed.githubRepos += result.changed;
+      summary.skipped.githubRepos += result.skipped;
       if (result.errors.length) {
         summary.errors.push(...result.errors);
       }
@@ -94,6 +109,8 @@ function json(body, status) {
 async function syncNetlifyForUser(supabase, userId, netlifyToken) {
   const errors = [];
   let synced = 0;
+  let changedCount = 0;
+  let skipped = 0;
 
   const { data: sites, error } = await supabase
     .from("netlify_sites")
@@ -101,7 +118,7 @@ async function syncNetlifyForUser(supabase, userId, netlifyToken) {
     .eq("user_id", userId);
 
   if (error) {
-    return { synced, errors: [`netlify_sites(${userId}): ${error.message}`] };
+    return { synced, changed: changedCount, skipped, errors: [`netlify_sites(${userId}): ${error.message}`] };
   }
 
   for (const site of sites || []) {
@@ -138,29 +155,26 @@ async function syncNetlifyForUser(supabase, userId, netlifyToken) {
         state = "enqueued";
       }
 
-      // Atomic replace — the unique constraint on netlify_site_id (added
-      // in migration 009) makes this an in-place update when a row
-      // already exists, with no delete-then-insert race window.
-      const { error: upsertError } = await supabase
-        .from("netlify_deploys")
-        .upsert(
-          {
-            netlify_site_id: site.id,
-            user_id: userId,
-            state,
-            branch: d.branch || "main",
-            commit_message: d.title || d.commit_message || null,
-            deploy_time: d.deploy_time || null,
-            error_message: d.error_message || null,
-            published_at: d.published_at || null,
-          },
-          { onConflict: "netlify_site_id" },
-        );
+      const { changed, error: upsertError } = await writeNetlifyDeploySnapshot(supabase, {
+        netlify_site_id: site.id,
+        user_id: userId,
+        state,
+        branch: d.branch || "main",
+        commit_message: d.title || d.commit_message || null,
+        deploy_time: d.deploy_time || null,
+        error_message: d.error_message || null,
+        published_at: d.published_at || null,
+      });
 
       if (upsertError) {
         errors.push(`netlify ${site.id}: ${upsertError.message}`);
       } else {
         synced += 1;
+        if (changed) {
+          changedCount += 1;
+        } else {
+          skipped += 1;
+        }
       }
     } catch (err) {
       // AbortSignal.timeout fires a TimeoutError (name === "TimeoutError"),
@@ -171,13 +185,15 @@ async function syncNetlifyForUser(supabase, userId, netlifyToken) {
     }
   }
 
-  return { synced, errors };
+  return { synced, changed: changedCount, skipped, errors };
 }
 
 // ─── GitHub sync (per user) ─────────────────────────────────────────
 async function syncGithubForUser(supabase, userId, githubToken) {
   const errors = [];
   let synced = 0;
+  let changedCount = 0;
+  let skipped = 0;
 
   const { data: repos, error } = await supabase
     .from("github_repos")
@@ -185,10 +201,10 @@ async function syncGithubForUser(supabase, userId, githubToken) {
     .eq("user_id", userId);
 
   if (error) {
-    return { synced, errors: [`github_repos(${userId}): ${error.message}`] };
+    return { synced, changed: changedCount, skipped, errors: [`github_repos(${userId}): ${error.message}`] };
   }
   if (!repos || repos.length === 0) {
-    return { synced, errors };
+    return { synced, changed: changedCount, skipped, errors };
   }
 
   const ghHeaders = {
@@ -274,31 +290,29 @@ async function syncGithubForUser(supabase, userId, githubToken) {
             }
           : { at: null, message: null };
 
-      // Atomic replace via upsert on the github_repo_id unique constraint
-      // (added in migration 009).
-      const { error: upsertError } = await supabase
-        .from("github_activity")
-        .upsert(
-          {
-            github_repo_id: repo.id,
-            user_id: userId,
-            open_prs: openPrs,
-            review_requested_prs: reviewRequestedPrs.length,
-            review_requested_pr_details: reviewRequestedPrDetails,
-            assigned_issues: assignedIssueDetails.length,
-            assigned_issue_details: assignedIssueDetails,
-            total_issues: totalIssues,
-            latest_commit_at: latest.at,
-            latest_commit_message: latest.message,
-            synced_at: new Date().toISOString(),
-          },
-          { onConflict: "github_repo_id" },
-        );
+      const { changed, error: upsertError } = await writeGithubActivitySnapshot(supabase, {
+        github_repo_id: repo.id,
+        user_id: userId,
+        open_prs: openPrs,
+        review_requested_prs: reviewRequestedPrs.length,
+        review_requested_pr_details: reviewRequestedPrDetails,
+        assigned_issues: assignedIssueDetails.length,
+        assigned_issue_details: assignedIssueDetails,
+        total_issues: totalIssues,
+        latest_commit_at: latest.at,
+        latest_commit_message: latest.message,
+        synced_at: new Date().toISOString(),
+      });
 
       if (upsertError) {
         errors.push(`github ${repo.id}: ${upsertError.message}`);
       } else {
         synced += 1;
+        if (changed) {
+          changedCount += 1;
+        } else {
+          skipped += 1;
+        }
       }
     } catch (err) {
       const retriable = err?.name === "TimeoutError" || err?.name === "AbortError";
@@ -306,7 +320,7 @@ async function syncGithubForUser(supabase, userId, githubToken) {
     }
   }
 
-  return { synced, errors };
+  return { synced, changed: changedCount, skipped, errors };
 }
 
 export const config = {

@@ -5,6 +5,7 @@
 // not imported from the client bundle.
 
 import { createClient } from "@supabase/supabase-js";
+import { writeNetlifyDeploySnapshot } from "./sync-snapshot-writes.mjs";
 
 /**
  * Netlify Function: sync-netlify-deploys
@@ -89,7 +90,7 @@ export default async (request) => {
   }
 
   if (!sites || sites.length === 0) {
-    return new Response(JSON.stringify({ synced: 0, deploys: [] }), {
+    return new Response(JSON.stringify({ synced: 0, changed: 0, skipped: 0, results: [] }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
@@ -139,24 +140,33 @@ export default async (request) => {
         published_at: d.published_at || null,
       };
 
-      const { error: upsertError } = await supabase
-        .from("netlify_deploys")
-        .upsert(deployPayload, { onConflict: "netlify_site_id" });
+      const { changed, error: upsertError } = await writeNetlifyDeploySnapshot(
+        supabase,
+        deployPayload,
+      );
 
       if (upsertError) {
         results.push({ siteId: site.id, error: upsertError.message });
       } else {
-        results.push({ siteId: site.id, state, branch: deployPayload.branch });
+        results.push({ siteId: site.id, state, branch: deployPayload.branch, changed });
       }
     } catch (err) {
       results.push({ siteId: site.id, error: err.message });
     }
   }
 
-  return new Response(JSON.stringify({ synced: results.filter((r) => !r.error).length, results }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({
+      synced: results.filter((r) => !r.error).length,
+      changed: results.filter((r) => r.changed).length,
+      skipped: results.filter((r) => !r.error && !r.changed).length,
+      results,
+    }),
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 };
 
 export const config = {

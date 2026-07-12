@@ -5,6 +5,7 @@
 // not imported from the client bundle.
 
 import { createClient } from "@supabase/supabase-js";
+import { writeGithubActivitySnapshot } from "./sync-snapshot-writes.mjs";
 
 /**
  * Netlify Function: sync-github-activity
@@ -84,7 +85,7 @@ export default async (request) => {
   }
 
   if (!repos || repos.length === 0) {
-    return new Response(JSON.stringify({ synced: 0, results: [] }), {
+    return new Response(JSON.stringify({ synced: 0, changed: 0, skipped: 0, results: [] }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
@@ -188,22 +189,19 @@ export default async (request) => {
         continue;
       }
 
-      const { error: upsertError } = await supabase.from("github_activity").upsert(
-        {
-          github_repo_id: r.id,
-          user_id: userId,
-          open_prs: openPrs,
-          review_requested_prs: reviewRequested,
-          review_requested_pr_details: reviewRequestedPrDetails,
-          assigned_issues: assignedIssues,
-          assigned_issue_details: assignedIssueDetails,
-          total_issues: totalIssues,
-          latest_commit_at: latestCommit.at,
-          latest_commit_message: latestCommit.message,
-          synced_at: new Date().toISOString(),
-        },
-        { onConflict: "github_repo_id" },
-      );
+      const { changed, error: upsertError } = await writeGithubActivitySnapshot(supabase, {
+        github_repo_id: r.id,
+        user_id: userId,
+        open_prs: openPrs,
+        review_requested_prs: reviewRequested,
+        review_requested_pr_details: reviewRequestedPrDetails,
+        assigned_issues: assignedIssues,
+        assigned_issue_details: assignedIssueDetails,
+        total_issues: totalIssues,
+        latest_commit_at: latestCommit.at,
+        latest_commit_message: latestCommit.message,
+        synced_at: new Date().toISOString(),
+      });
 
       if (upsertError) {
         results.push({ repoId: r.id, error: upsertError.message });
@@ -216,6 +214,7 @@ export default async (request) => {
           reviewRequested,
           assignedIssues,
           totalIssues,
+          changed,
         });
       }
     } catch (err) {
@@ -223,10 +222,18 @@ export default async (request) => {
     }
   }
 
-  return new Response(JSON.stringify({ synced: results.filter((r) => !r.error).length, results }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({
+      synced: results.filter((r) => !r.error).length,
+      changed: results.filter((r) => r.changed).length,
+      skipped: results.filter((r) => !r.error && !r.changed).length,
+      results,
+    }),
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 };
 
 export const config = {

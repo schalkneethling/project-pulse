@@ -8,6 +8,8 @@ export function WorkSection({
   project,
   onAdd,
   onUpdate,
+  onComplete,
+  onFocus,
   onArchive,
   onUnarchive,
   onDelete,
@@ -31,7 +33,9 @@ export function WorkSection({
   }
 
   const handleAdvance = (taskId, nextStatus) => {
-    void runMutation(() => onUpdate(taskId, { status: nextStatus }));
+    void runMutation(() =>
+      nextStatus === "done" ? onComplete(taskId) : onUpdate(taskId, { status: nextStatus }),
+    );
   };
 
   const handleBlock = (taskId) => {
@@ -81,6 +85,7 @@ export function WorkSection({
                     onAdvance={handleAdvance}
                     onBlock={handleBlock}
                     onEdit={onEdit}
+                    onFocus={onFocus}
                     onArchive={handleArchive}
                     onDelete={handleDelete}
                   />
