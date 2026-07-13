@@ -314,6 +314,7 @@ export default function App() {
           task={focusTask}
           projectName={focusProject.name}
           onSessionChange={setFocusSession}
+          onExit={() => setFocusSession(null)}
           onComplete={async () => {
             await completeTask(focusProject.id, focusTask.id);
             setFocusSession(null);

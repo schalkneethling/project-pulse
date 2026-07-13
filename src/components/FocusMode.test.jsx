@@ -24,6 +24,7 @@ describe("FocusMode", () => {
         projectName="Pulse"
         onSessionChange={vi.fn()}
         onComplete={vi.fn()}
+        onExit={vi.fn()}
       />,
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -41,6 +42,7 @@ describe("FocusMode", () => {
         task={{ title: "Test timer", description: "" }}
         onSessionChange={onSessionChange}
         onComplete={vi.fn()}
+        onExit={vi.fn()}
       />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Pause" }));
@@ -59,6 +61,7 @@ describe("FocusMode", () => {
         task={{ title: "Resume timer", description: "" }}
         onSessionChange={onSessionChange}
         onComplete={vi.fn()}
+        onExit={vi.fn()}
       />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Resume" }));
@@ -71,18 +74,22 @@ describe("FocusMode", () => {
 
   it("runs completion and reports a retryable failure", async () => {
     const onComplete = vi.fn().mockRejectedValue(new Error("GitHub refused the update"));
+    const onExit = vi.fn();
     render(
       <FocusMode
         session={{ running: false, anchor: null, accumulatedMs: 0 }}
         task={{ title: "Close issue", description: "" }}
         onSessionChange={vi.fn()}
         onComplete={onComplete}
+        onExit={onExit}
       />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Mark complete" }));
     expect(onComplete).toHaveBeenCalledOnce();
     expect(await screen.findByRole("alert")).toHaveTextContent("GitHub refused the update");
     expect(screen.getByRole("button", { name: "Mark complete" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: "Exit focus" }));
+    expect(onExit).toHaveBeenCalledOnce();
   });
 
   it("runs successful completion without showing an error", async () => {
@@ -93,6 +100,7 @@ describe("FocusMode", () => {
         task={{ title: "Finish work", description: "" }}
         onSessionChange={vi.fn()}
         onComplete={onComplete}
+        onExit={vi.fn()}
       />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Mark complete" }));
@@ -108,9 +116,11 @@ describe("FocusMode", () => {
         task={{ title: "Unsupported timer", description: "" }}
         onSessionChange={vi.fn()}
         onComplete={vi.fn()}
+        onExit={vi.fn()}
       />,
     );
     expect(screen.getByRole("alert")).toHaveTextContent("native Temporal API");
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Exit focus" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mark complete" })).not.toBeInTheDocument();
   });
 });
