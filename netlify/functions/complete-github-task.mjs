@@ -63,7 +63,14 @@ export default async (request) => {
     return json({ error: error?.name === "TimeoutError" ? "GitHub request timed out" : error.message }, 502);
   }
   if (!githubResponse.ok) {
-    return json({ error: `GitHub could not close the issue (${githubResponse.status})` }, 502);
+    let githubMessage = "";
+    try {
+      const githubError = await githubResponse.json();
+      githubMessage = githubError?.message ? `: ${githubError.message}` : "";
+    } catch {
+      // GitHub normally returns JSON, but the status remains useful if it does not.
+    }
+    return json({ error: `GitHub could not close the issue (${githubResponse.status})${githubMessage}` }, 502);
   }
 
   const { data: updated, error: updateError } = await supabase

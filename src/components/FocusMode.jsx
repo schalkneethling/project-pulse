@@ -18,7 +18,7 @@ function Jellyfish({ className }) {
   );
 }
 
-export function FocusMode({ session, task, projectName, onSessionChange, onComplete }) {
+export function FocusMode({ session, task, projectName, onSessionChange, onComplete, onExit }) {
   const containerRef = useRef(null);
   const [elapsed, setElapsed] = useState(() => currentElapsedMs(session));
   const [completing, setCompleting] = useState(false);
@@ -111,6 +111,15 @@ export function FocusMode({ session, task, projectName, onSessionChange, onCompl
             </div>
           )}
           {error && <p role="alert" className="mt-5 text-sm text-red-300">{error}</p>}
+          {(error || !temporalAvailable()) && (
+            <button
+              type="button"
+              onClick={onExit}
+              className="mt-5 rounded-lg px-4 py-2 text-sm font-medium text-slate-300 underline decoration-slate-600 underline-offset-4 transition hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-400"
+            >
+              Exit focus
+            </button>
+          )}
           {!session.running && temporalAvailable() && <p className="mt-5 text-sm text-slate-500">Your place is held. Resume when you are ready.</p>}
         </div>
       </main>
